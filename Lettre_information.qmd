@@ -1,0 +1,46 @@
+---
+title: ""
+format:
+  pdf:
+    include-in-header: lettre_officielle.sty
+params:
+  Civilite: "CIVILITE"
+  Prenom: "PRENOM"
+  Nom: "NOM"
+  Adresse: "ADRESSE"
+  CP: "CP"
+  Commune: "COMMUNE"
+  Infos_familiales: "SITUATION FAMILIALE"
+---
+
+```{r, include = F}
+library(knitr)
+```
+
+\vspace{4em}
+
+\destinataire{`r params$Civilite` `r params$Nom` `r params$Prenom` \\ `r params$Adresse` \\ `r params$CP` `r params$Commune`}
+
+\datelettre
+
+[**Objet**]{.underline} **: Entretien complémentaire à l’enquête Familles 2025**
+
+\vspace{1em}
+
+
+`r params$Civilite` `r params$Nom`,
+
+
+Vous avez participé en début d’année 2025 à une enquête de l’Institut national de la statistique et des études économiques (Insee), associée au recensement de la population, portant sur les familles. Nous vous remercions pour votre contribution à cette opération statistique.
+
+Lors de votre réponse à l’enquête Familles, vous avez accepté d’être recontacté(e) pour un entretien complémentaire réalisé par un chercheur, afin d’approfondir certains aspects abordés dans le questionnaire. C’est dans ce cadre que je vous contacte aujourd’hui.
+
+L’entretien proposé s’inscrit dans un projet de recherche portant sur la prise en charge matérielle, affective et administrative des enfants. Votre expérience en tant que `r params$Infos_familiales` présente un intérêt particulier pour ce travail scientifique.
+
+L’entretien sera conduit par moi-même, Mme Anouk Martin, doctorante en sociologie au Centre de recherche sociologique et politique de Paris (CRESPPA – CNRS, Université Paris 8). Si cela est possible, il se déroulera en face à face à votre domicile, durera environ 1h30, et pourra être enregistré avec votre accord préalable. Je prendrai prochainement contact avec vous afin de convenir d’un rendez-vous. Vous pouvez également me joindre directement par mail (anouk.martin34\@etud.univ-paris8.fr) ou par téléphone (06 32 50 67 28).
+
+Cet entretien est réalisé exclusivement à des fins de recherche scientifique, dans le respect du cadre légal en vigueur. Vos réponses seront traitées de manière strictement confidentielle, anonymisées, et ne seront transmises à aucun tiers. Vous trouverez ci-joint une notice précisant les modalités de l’entretien et les garanties de confidentialité.
+
+Je vous remercie par avance de l’attention portée à cette démarche, et vous prie d’agréer, `r params$Civilite` `r params$Nom`, l’expression de ma considération distinguée.
+
+\signature{Anouk MARTIN \\ Doctorante au CRESPPA, UMR 7217, Université Paris 8 \\ anouk.martin34\@etud.univ-paris8.fr \\ 06 32 50 67 28 \\ 59-61 rue Pouchet 75849 Paris Cedex 17}
