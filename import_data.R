@@ -1,7 +1,11 @@
 # Packages nécessaires
 library(httr)
-library(askpass)
+#library(askpass)
 
+# MDP et username du sdrive
+
+app_pwd <- Sys.getenv("MDP_SSPCLOUD")
+user <- Sys.getenv("USER_SSPCLOUD")
 
 # URL de base de ton espace WebDAV
 base_url <- "https://sdrive.cnrs.fr/remote.php/dav/files/1426185"
