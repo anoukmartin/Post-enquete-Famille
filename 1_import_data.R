@@ -60,3 +60,5 @@ stop_for_status(res)
 # Charger le CSV directement en data.frame
 liens <- read.csv(text = content(res, "text"), header = TRUE)
 
+
+rm(res, tableau)
