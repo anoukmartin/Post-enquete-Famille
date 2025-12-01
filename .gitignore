@@ -3,7 +3,9 @@
 .RData
 .Ruserdata
 
-.pdf 
+.pdf
 .csv
 .xls
 .xlsx
+/.quarto/
+**/*.quarto_ipynb
