@@ -1,0 +1,192 @@
+---
+title: ""
+format: 
+  pdf:
+    documentclass: article          
+    geometry:                     
+      - left=1cm               
+      - right=1cm                
+      - top=1cm                  
+      - bottom=1cm              
+      - heightrounded              
+editor: visual
+params:
+  id_individu: "DOMINIQUE 1979-03-14"
+  missing_values: FALSE
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+
+```
+
+```{r}
+
+library(dplyr)
+library(tidyverse)
+library(stringr)
+library(knitr)
+library(kableExtra)
+# Charger le package here si ce n'est pas déjà fait
+if (!requireNamespace("here", quietly = TRUE)) {
+  install.packages("here")
+}
+library(here)
+
+id_individu <- params$id_individu
+# Recharger BIEF
+BIEF <- readRDS(here("1_data", "processed", "BIEF.Rds")) %>%
+    filter(identifiant == id_individu) 
+
+
+# Recharger vars_all
+vars_all <- readRDS(here("1_data", "processed", "vars_all.Rds")) 
+
+#Recharger liens 
+liens <- readRDS(here("1_data", "processed", "liens.RDS")) %>%
+    filter(identifiant == id_individu) 
+
+#recharger coordonées 
+coordonnees <- readRDS(here("1_data", "processed", "coordonnees.RDS")) %>%
+    filter(identifiant == id_individu) 
+
+
+```
+
+```{r, results = 'asis'}
+
+cat("# Rapport pour ", id_individu)
+
+
+```
+
+```{r}
+#| echo: false
+#| results: 'asis'
+
+cat("
+::: {.callout-important}
+### Informations de contact
+
+- **Téléphone** : ", coordonnees$POSTENQ_TEL, "
+- **Email** : ", coordonnees$MAIL, "
+- **Adresse** : ", coordonnees$AdressePostale, coordonnees$ComplementAdresse, ", ", coordonnees$Commune, "
+:::
+")
+
+```
+
+```{r}
+#| echo: false
+#| results: 'asis'
+
+cat("
+::: {.callout-note}
+### Composition du ménage
+
+")
+knitr::kable(
+  liens %>%
+    select(prenom, age, sexe, libelle_relation) %>%
+    bind_rows(data.frame(prenom = BIEF$prenom, 
+                             age = as.double(BIEF$AGE), 
+                             sexe = str_sub(BIEF$sexe, 1, 1),  
+                             libelle_relation = "EGO"),
+              .),
+  caption = "Membres du ménage"
+)
+cat("
+:::
+")
+```
+
+## Configuration résidentielle
+
+
+
+```{r}
+
+res <- data.frame(
+  Variable = names(BIEF),
+  Reponse = as.character(BIEF)
+) 
+
+res <- full_join(vars_all, res, by = "Variable")
+
+# Recodage éventuel
+res <- res %>%
+  mutate(Variable_txt = case_when(
+    Variable == Var ~ paste0("[", Variable, "]"), 
+    TRUE ~ paste0("[", Variable, " (", Var, ")]"), 
+  ))
+
+if(!params$missing_values){
+  res <- res %>%
+    filter(!is.na(Reponse)) %>%
+    filter(!(Reponse %in% c("NA", "", " ")))
+}
+
+
+
+```
+
+
+```{r, results='asis'}
+
+prepare_pack <- function(x,col){
+  tmp <- x[[col]] %>% # on ne garde que la colonne qui nous intéresse
+    as.character() %>%
+         rle          # à laquelle on applique la fonction "run length encoding"
+  # on met  au format attendu par le paramètre "index=" de pack_rows()
+ setNames(tmp$lengths, tmp$values)
+}
+
+
+res <- res %>%
+  mutate(Variable_txt = paste0(Variable_txt, " " , Question)) 
+
+for (source in unique(res$Source)){
+  cat("# Réponses à ", source, "\n\n")
+  res1 <- res %>% 
+    filter(Source == source)
+  for(qui in unique(res1$Qui)){
+    cat("## A propos de ", qui, "\n\n")
+    res2 <- res1 %>% 
+      filter(Qui == qui)
+    
+    indexNA <- which(is.na(res2$Reponse) | res2$Reponse %in% c("NA", "", " "))
+    col_temp <- prepare_pack(res2, "Theme")
+    cat(res2 %>%
+      select(Variable_txt, Reponse) %>%
+      kable(
+     # format = "latex",
+      booktabs = TRUE,          # style « booktabs » (plus joli)
+      escape = FALSE           # permet d’utiliser du LaTeX dans les cellules
+    ) %>%
+     # on fixe la largeur de la colonne « texte_long » à 6 cm
+      column_spec(
+        column = 1,                 # deuxième colonne (= texte_long)
+        width = "12cm",              # LaTeX crée p{6cm}
+      #  latex_valign = "m"          # vertical centering (m = middle)
+      ) %>%
+        column_spec(
+        column = 2,                 # deuxième colonne (= texte_long)
+        width = "6cm",              # LaTeX crée p{6cm}
+        ) %>%
+    # on rend le tableau plus agréable dans le PDF
+      kable_styling(latex_options = c("hold_position")) %>%
+      row_spec(row = indexNA, color = "#bcbcbc") %>%
+      pack_rows(index = col_temp)) 
+    cat("\n\n")
+      }
+  
+}
+
+
+
+```
+
+
