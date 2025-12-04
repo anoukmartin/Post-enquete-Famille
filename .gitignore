@@ -2,10 +2,21 @@
 .Rhistory
 .RData
 .Ruserdata
+*.rds
+*.RDS
+*.Rds
+*.ods
+*.odt
+*.docs
 
-.pdf
-.csv
-.xls
-.xlsx
+
+*.pdf
+*.csv
+*.xls
+*.xlsx
+*.log
+*.tex
+1_data/*
+0_setup/old/*
 /.quarto/
 **/*.quarto_ipynb
