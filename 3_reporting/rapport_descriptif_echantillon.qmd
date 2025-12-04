@@ -1,0 +1,241 @@
+---
+title: "Untitled"
+format: pdf
+editor: visual
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# ------------------------------------------------------------------
+# 1️⃣  Packages de base
+# ------------------------------------------------------------------
+library(here)        # gestion des chemins de fichiers
+library(dplyr)       # manipulation de données
+library(questionr)   # fonction freq()
+library(knitr)       # kable()
+library(kableExtra)  # options de style (facultatif, mais très pratique)
+library(tibble)      # rownames_to_column()
+
+# ------------------------------------------------------------------
+# 2️⃣  Options globales du document
+# ------------------------------------------------------------------
+knitr::opts_chunk$set(
+  #echo      = FALSE,   # ne pas afficher le code R
+  warning   = FALSE,
+  message   = FALSE
+ # results   = "asis"   # important : insérer le texte « as‑is » (kable → LaTeX)
+)
+
+
+```
+
+```{r load-dt, include = F}
+# ------------------------------------------------------------------
+# Lecture du jeu de données (à adapter si le chemin change)
+# ------------------------------------------------------------------
+BIEF <- readRDS(here(file = "1_data/processed/BIEF.Rds"))
+
+# ------------------------------------------------------------------
+# Création du data‑frame de travail « data »
+# ------------------------------------------------------------------
+dt <- BIEF %>%
+  mutate(
+    ANAI_ENF_TOUS = rowMeans(select(., starts_with("ANAI_ENF")), na.rm = TRUE)
+  ) %>% 
+  mutate(
+    AGE_ENF_TOUS = 2025 - ANAI_ENF_TOUS
+  )
+```
+
+# Verification des critères de tirage
+
+## Localisation géographique
+
+Dans la mesure du possible, l’ensemble des entretiens seraient réalisés en face à face, de préférence au domicile de l’enquêté, à défaut, un entretien en visio-conférence pourra etre proposé. C’est pourquoi, nous prévoyons de sélectionner des enquêtés résidants uniquement dans les départements du Val de Marne (94) et de l’Essonne (91). La sélection dans ces deux départements nous permettrait d’observer une variété de situations résidentielles tout en restant suffisamment proche de notre propre domicile et lieu de travail pour nous déplacer au domicile des individus enquêtés. Si ces restrictions posent problèmes, il est tout à fait possible d’envisager une autre délimitation géographique.
+
+```{r}
+
+```
+
+## Conjugalité et parentalité
+
+> On définit une première sous population comme l’ensemble des individus …
+
+> -   … qui se déclarent en couple (cohabitant ou non, peu importe le statut matrimonial) … \[COUPLE = 1 ou 2\]
+
+```{r}
+freq(dt$COUPLE)               # fréquence des couples
+```
+
+::: {.callout-note appearance="minimal"}
+Il s'agit bien uniquemment de couples, cohabitants ou non.
+:::
+
+> -   … et ayant au moins un enfant âgé de 0 à 21 ans (cohabitant ou non) \[ENF = « 1 »\] and (\[ANAI_ENFLOGX \>= 2004, pour au moins un X allant de 1 à CBENFLOG\] or \[ANAI_ENFAILY \>= 2004, pour au moins un Y allant de 1 à CBENFAIL\])
+
+```{r}
+# nombre d’enfants (égo)
+freq(dt$ENF)                  
+
+# année de naissance des enfants 
+dt <- dt %>%
+   mutate(ENF_2004 = case_when(
+    if_any(starts_with("ANAI_ENF"), ~ . >= 2004, na.rm = TRUE) ~ "Oui",
+    if_all(starts_with("ANAI_ENF"), ~ is.na(.)) ~ NA_character_,
+    TRUE ~ "Non"))
+# au moins un enfant est né en 2004 ou après
+freq(dt$ENF_2004)
+
+
+
+```
+
+::: {.callout-note appearance="minimal"}
+Seuls 16 individus selectionnés ne semblent pas avoir d'enfants nés en 2004 et après. Cela ne nous parait pas problématique.
+:::
+
+## Sur-représentations des individus ayant eu des enfants d'une autre union
+
+> Parmi cette sous-population, on créer deux catégories :
+
+> (1) Individus qui se déclarent en couple avec l’autre parent de tous leurs enfants, c’est à dire en couple et n’ayant pas d’enfants issus d’autres unions \> \[SEP_AUT_PAR_ENFLOGX= « 2 », pour tout X allant de 1 à CBENFLO\] and \[SEP_AUT_PAR_ENFAILY = « 2 » pour tout Y allant de 1 à CBENFAIL\].
+
+> (2) Individus qui se déclarent en couple avec une personne qui n’est pas le parent d’au moins un de leurs enfants \> (\[SEP_AUT_PAR_ENFLOGX = « 1 », pour au moins un X allant de 1 à CBENFLO\] or \[SEP_AUT_PAR_ENFAILY = « 1 »\] pour au moins un Y allant de 1 à CBENFAIL).
+
+> Dans l’idéal, on effectue un tirage dans ces deux groupes en sur-représentant très fortement la seconde catégorie dans l’échantillon final
+
+```{r}
+
+dt <- dt %>%
+  mutate(
+    SEP_AUT_PAR_ENF = case_when(
+      if_any(starts_with("SEP_AUT_PAR_ENF"), ~ . == "Oui", na.rm = TRUE) ~ "Oui",
+      if_all(starts_with("SEP_AUT_PAR_ENF"), ~ is.na(.)) ~ NA_character_,
+      TRUE ~ "Non"
+    ),
+    ENF_AUTRE_UNION = case_when(
+      if_any(starts_with("PARENT_VIT"), ~ . %in% c("Non, il/elle vit ailleurs", "Non, il/elle est décédé(e)"), na.rm = TRUE) ~ "Oui",
+      if_all(starts_with("PARENT_VIT"), ~ is.na(.)) ~ NA_character_,
+      TRUE ~ "Non"
+    )
+  )
+
+# ego déclare pour au moins un de ses enfants etre séparé du parent de celui-ci
+freq(dt$SEP_AUT_PAR_ENF)
+# ego déclare pour au moins un de ses enfants ne pas vivre avec le parent de celui-ci
+freq(dt$ENF_AUTRE_UNION) 
+table(dt$SEP_AUT_PAR_ENF, dt$ENF_AUTRE_UNION, useNA = "ifany")
+
+# enfants du conjoint d’un autre parent (<‑21 ans)
+freq(dt$ENF21_AUTPAR_C1)      
+freq(dt$ENF21_AUTPAR_C2)
+```
+
+::: callout-important
+Les individus qui ont eu un enfant issus d'une précédante union ne sont pas sur-représentés dans l'échantillon final. Il s'agit pourtant de notre objet d'étude. Les couples parentaux n'étant dans l'échantillon que pour pouvoir effectuer des comparaisons
+:::
+
+## Diversité des situations des enfants :
+
+> Dans les deux catégories, on cherche à diversifier les situations résidentielles des enfants des individus sélectionnés : des enfants cohabitants (\> \[CBENFLOG \>= 1\]), ou non cohabitants (\> \[CBENFAIL \>= 1\]).
+
+```{r}
+
+freq(dt$CBENFLOG)             # enfants qui vivent dans le logement 
+freq(dt$CBENFAIL >= 1)             # enfants qui vivent ailleurs
+
+table(dt$ENF_AUTRE_UNION, dt$CBENFAIL, useNA = "always") 
+table(dt$SEP_AUT_PAR_ENF, dt$CBENFAIL, useNA = "always")
+
+
+```
+
+::: {.callout-note appearance="minimal"}
+Les enfants vivant hors du logement nous apparaissent peu représentés. Compte tenus des très faibles effectifs des individus ayant eu des enfants d'une précédante union, ils apparaissent correctement représentés dans cette catégorie (12 cas sur 17).
+:::
+
+> En particulier, dans la seconde catégorie (2), on cherche également à diversifier en distinguant les situations des enfants non-cohabitants selon qu’ils résident chez leur autre parent (\> \[AUT_PAR_ENFAILY = « 1 », pour Y allant de 1 à CBNFAIL\]) ou qu’ils résident dans leur propre logement (\> \[LOG_ENFAILY = « 1 », pour Y allant de 1 à CBNFAIL\]). Dans cette catégorie, on cherche également à s’assurer que le couples non- cohabitants (\> \[COUPLE = 2\]) et que les cas où le couple a également des enfants communs (\>\[SEP_AUT_PAR_ENFLOGX= « 2 », pour au moins un X allant de 1 à CBENFLO\] or \[SEP_AUT_PAR_ENFAILY = « 2 » pour au moins un Y allant de 1 à CBENFAIL\].) sont bien représentés.
+
+```{r}
+
+dt_enfautunion <- dt %>% filter(ENF_AUTRE_UNION == "Oui") %>%
+  mutate(ENF_AUTRE_UNION = if_else(
+      if_any(starts_with("PARENT_VIT"), ~ . %in% c("Non, il/elle vit ailleurs", "Non, il/elle est décédé(e)")
+      ),  "Oui","Non")) 
+
+
+table(dt$ENF_AUTRE_UNION, dt$CBENFAIL, useNA = "always") 
+```
+
+## Enfants d’égo et de son conjoint/sa conjointe
+
+```{r enfants}
+
+
+# mutate(
+#     across(
+#       .cols = starts_with("ANAI_ENF"),
+#       .fns  = ~ 2025 - .x,                    
+#       .names = "AGE_{.col}"       
+#     )
+#   ) 
+
+# Histogramme de l’âge moyen des enfants d’égo (reste une figure)
+hist(
+  dt$AGE_ENF_TOUS,
+  breaks = 30,
+  main   = "Âge moyen des enfants d’égo",
+  xlab   = "Âge",
+  col    = "lightblue")
+
+freq(dt$ENF21_AUTPAR_C1)      # enfants du conjoint d’un autre parent (<‑21 ans)
+```
+
+## Diversité des caractéristiques sociodémographiques
+
+> On cherche également à s’assurer qu’une variété de positions sociales sont bien représentées dans les deux groupes. S’il est possible d’utiliser les questions du recensement pour sélectionner les enquêtés, on cherche à diversifier les niveaux de diplômes (\> \[RP_Q12\]), la situation d’emploi des individus sélectionnés (\> \[RP_Q13\]) ainsi que les statuts d’occupation du logement (\> \[RP_Q6\]) au sein de l’échantillon.
+
+```{r sociodemo}
+kable(freq(dt$dipl))    # diplôme
+kable(freq(dt$empl))   # situation d’emploi
+
+freq(dt_enfautunion$dipl)
+freq(dt_enfautunion$empl)
+
+# table(dt$dipl, dt$SEP_AUT_PAR_ENF)
+# table(dt$prof, dt$SEP_AUT_PAR_ENF)
+# table(dt$sexe, dt$SEP_AUT_PAR_ENF, useNA = "ifany")
+# freq(dt$situat)   # situation familiale
+
+# (pas de variable sur le statut d'occupation du logement dans votre jeu)
+
+```
+
+# Description statistique de l'échantillon 
+
+## Caractéristiques sociolodémographiques d'égo
+
+## Configurations familiales 
+
+```{r couples}
+
+freq(dt$matr) 
+# unions légales (mariage/PACS)
+table(table(dt$SEXE_C, dt$sexe), useNA = "always")  # tableau croisé sexe du conjoint vs sexe de l’égo
+```
+
+```{r}
+
+dt <- dt %>%
+    mutate(ENF_2007 = case_when(
+    if_any(starts_with("ANAI_ENF"), ~ . <= 2007, na.rm = TRUE) ~ "Oui",
+    if_all(starts_with("ANAI_ENF"), ~ is.na(.)) ~ NA_character_,
+    TRUE ~ "Non"))
+
+freq(dt$ENF_2007)
+freq((dt$ANNEE_MARI - dt$ANNEE_U) > 1)
+summary(dt$ANNEE_MARI - dt$ANNEE_U)
+freq((dt$ANNEE_PACS - dt$ANNEE_U) > 1)
+summary(dt$ANNEE_PACS - dt$ANNEE_U)
+```
