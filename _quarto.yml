@@ -1,0 +1,4 @@
+# _quarto.yml
+project:
+  type: default   # ou "default" si vous ne créez pas un site
+# Vous pouvez laisser le fichier vide – sa présence suffit
