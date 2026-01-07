@@ -20,7 +20,7 @@ config <- list(
     "paquet1_coordonnees.csv",
     "paquet2_reponsesEF.csv",
     "paquet3_bi.csv",
-    "paquet4_liens_new.csv"
+    "paquet4_liens.csv"
   ),
   names = c(
     "coordonnees",
@@ -83,6 +83,8 @@ liens <- data_frames$liens
 # Nettoyage
 rm(data_frames, url, i)
 
+dir.create("1_data")
+dir.create("1_data/processed")
 # Sauvegarde des données importées
 saveRDS(coordonnees, file = "1_data/processed/coordonnees.rds")
 saveRDS(EF, file = "1_data/processed/EF.rds")

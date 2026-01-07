@@ -46,6 +46,7 @@ dt <- BIEF %>%
   mutate(
     AGE_ENF_TOUS = 2025 - ANAI_ENF_TOUS
   )
+dt
 ```
 
 # Verification des critères de tirage
@@ -65,7 +66,8 @@ Dans la mesure du possible, l’ensemble des entretiens seraient réalisés en f
 > -   … qui se déclarent en couple (cohabitant ou non, peu importe le statut matrimonial) … \[COUPLE = 1 ou 2\]
 
 ```{r}
-freq(dt$COUPLE)               # fréquence des couples
+
+freq(dt$couple)               # fréquence des couples
 ```
 
 ::: {.callout-note appearance="minimal"}
@@ -80,19 +82,19 @@ freq(dt$ENF)
 
 # année de naissance des enfants 
 dt <- dt %>%
-   mutate(ENF_2004 = case_when(
-    if_any(starts_with("ANAI_ENF"), ~ . >= 2004, na.rm = TRUE) ~ "Oui",
+   mutate(ENF_1999 = case_when(
+    if_any(starts_with("ANAI_ENF"), ~ . >= 1999, na.rm = TRUE) ~ "Oui",
     if_all(starts_with("ANAI_ENF"), ~ is.na(.)) ~ NA_character_,
     TRUE ~ "Non"))
 # au moins un enfant est né en 2004 ou après
-freq(dt$ENF_2004)
+freq(dt$ENF_1999)
 
 
 
 ```
 
 ::: {.callout-note appearance="minimal"}
-Seuls 16 individus selectionnés ne semblent pas avoir d'enfants nés en 2004 et après. Cela ne nous parait pas problématique.
+Seuls 4 individus selectionnés ne semblent pas avoir d'enfants nés en 1999 et après. Cela ne nous parait pas problématique.
 :::
 
 ## Sur-représentations des individus ayant eu des enfants d'une autre union
@@ -212,11 +214,11 @@ freq(dt_enfautunion$empl)
 
 ```
 
-# Description statistique de l'échantillon 
+# Description statistique de l'échantillon
 
 ## Caractéristiques sociolodémographiques d'égo
 
-## Configurations familiales 
+## Configurations familiales
 
 ```{r couples}
 

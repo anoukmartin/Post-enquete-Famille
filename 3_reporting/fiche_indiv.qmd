@@ -11,7 +11,7 @@ format:
       - heightrounded              
 editor: visual
 params:
-  id_individu: "DOMINIQUE 1979-03-14"
+  id_individu: " "
   missing_values: FALSE
 editor_options: 
   chunk_output_type: console
@@ -46,8 +46,8 @@ BIEF <- readRDS(here("1_data", "processed", "BIEF.Rds")) %>%
 vars_all <- readRDS(here("1_data", "processed", "vars_all.Rds")) 
 
 #Recharger liens 
-liens <- readRDS(here("1_data", "processed", "liens.RDS")) %>%
-    filter(identifiant == id_individu) 
+liens <- readRDS(here("1_data", "processed", "menages.rds")) %>%
+  filter(identifiant == id_individu)
 
 #recharger coordonées 
 coordonnees <- readRDS(here("1_data", "processed", "coordonnees.RDS")) %>%
@@ -72,7 +72,7 @@ cat("
 ### Informations de contact
 
 - **Téléphone** : ", coordonnees$POSTENQ_TEL, "
-- **Email** : ", coordonnees$MAIL, "
+- **Email** : ", coordonnees$POSTENQ_MAIL, "
 - **Adresse** : ", coordonnees$AdressePostale, coordonnees$ComplementAdresse, ", ", coordonnees$Commune, "
 :::
 ")
@@ -89,23 +89,13 @@ cat("
 
 ")
 knitr::kable(
-  liens %>%
-    select(prenom, age, sexe, libelle_relation) %>%
-    bind_rows(data.frame(prenom = BIEF$prenom, 
-                             age = as.double(BIEF$AGE), 
-                             sexe = str_sub(BIEF$sexe, 1, 1),  
-                             libelle_relation = "EGO"),
-              .),
+  liens,
   caption = "Membres du ménage"
 )
 cat("
 :::
 ")
 ```
-
-## Configuration résidentielle
-
-
 
 ```{r}
 
@@ -132,7 +122,6 @@ if(!params$missing_values){
 
 
 ```
-
 
 ```{r, results='asis'}
 
@@ -188,5 +177,3 @@ for (source in unique(res$Source)){
 
 
 ```
-
-

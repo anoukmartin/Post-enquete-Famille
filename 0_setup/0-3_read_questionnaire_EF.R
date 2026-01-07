@@ -9,6 +9,7 @@
 # --------------------------------------------------------------
 # 1. Packages --------------------------------------------------
 # --------------------------------------------------------------
+
 suppressPackageStartupMessages({
   library(httr)        # requêtes HTTP / WebDAV
   library(xml2)        # lecture du XML interne d’un .odt

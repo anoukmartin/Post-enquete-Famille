@@ -5,6 +5,7 @@
 # Chargement des librairies
 library(tidyverse)
 library(readxl)
+library(glue)
 
 # -----------------------------------------------------------------------
 # 1. Charger les données
@@ -12,9 +13,26 @@ library(readxl)
 # Données du questionnaire (déjà présentes dans RStudio)
 
 EF <- readRDS(file = "1_data/processed/EF.rds")
-BI <- readRDS(file = "1_data/processed/BI.rds")
+BI <- readRDS(file = "1_data/processed/BI.rds") 
+liens <- readRDS(file = "1_data/processed/liens.rds")
+
 names(EF)
 names(BI)
+names(BI) <- str_remove(names(BI), "_x")
+names(BI) <- str_remove(names(BI), "_merge")
+BI <- BI  %>%
+  mutate(interrogationId = str_sub(identifiant, 1, 9),
+         identifiant = str_sub(identifiant, 10, -1))
+
+liens <- liens  %>%
+  mutate(interrogationId = str_sub(identifiant, 1, 9),
+         identifiant = str_sub(identifiant, 10, -1)) 
+
+# les deux alexandra
+BI[BI$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- paste0("ALEXANDRA 1973-05-09", c(" N°1", " N°2"))
+EF[EF$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- paste0("ALEXANDRA 1973-05-09", c(" N°1", " N°2"))
+liens[liens$identifiant == "ALEXANDRA 1973-05-09", "identifiant"][1:3] <- "ALEXANDRA 1973-05-09 N°1"
+liens[liens$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- "ALEXANDRA 1973-05-09 N°2"
 
 vars_BI <- readRDS(file = "1_data/processed/vars_EAR.rds")
 vars_EF <- readRDS(file = "1_data/processed/vars_EF.rds")
@@ -57,15 +75,27 @@ vars_EF <- vars_EF %>%
   ))
 EF$sexe <- NULL
 rm(gender_var)
-
+EF$ADOPT_ENFLOG1
 # On ajoute des variables qui manque 
 head(vars_EF)
 vars_EF <- bind_rows(vars_EF, 
-                 data.frame(Variable = c("AG_ENFLOG1", "AG_ENFAIL1"), 
+                 data.frame(Variable = c("AG_ENFLOG1", 
+                                         "AG_ENFAIL1", 
+                                         "ADOPT_ENFLOG1", 
+                                         "ADOPT_ENFAIL1", 
+                                         "ANADOPT_ENFLOG1", 
+                                         "ANADOPT_ENFAIL1", 
+                                         "PNAI_PAR1"), 
                             Question = c("Age de l'enfant vivant dans le logement",
-                                         "Age de l'enfant vivant dans le logement"),
-                            Modalites = c(NA, NA),
-                            Type = c("Quantitative", "Quantitative")))
+                                         "Age de l'enfant vivant ailleur", 
+                                         "Adoption de l'enfant vivant dans le logement",
+                                         "Adoption de l'enfant vivant ailleur", 
+                                         "Année de l'adoption de l'enfant vivant dans le logement", 
+                                         "Année de l'adoption de l'enfant vivant ailleur", 
+                                         "Pays de naissance du parent"),
+                            Modalites = c(NA, NA, rep("1 - Oui | 2 - Non", 2), NA, NA, NA),
+                            Type = c("Quantitative", "Quantitative", "Qualitative", "Qualitative", 
+                                     "Quantitative", "Quantitative", "Qualitative")))
 
 
 head(vars_BI)
@@ -109,6 +139,7 @@ vars_all2 <- left_join(correspondances, vars_all, by = c("Var" = "Variable")) %>
   arrange(i)
 
 anomalie1 <- names(BIEF)[!(names(BIEF) %in% vars_all2$Variable)]
+anomalie1
 
 vars_all2 <- vars_all2 %>%
 mutate(
@@ -129,8 +160,10 @@ mutate(
       "Enfant(s) du conjoint",
     
     # PAR + chiffre final → parentX
-    str_detect(Variable, "PAR[0-9]") ~ 
-      glue("Parent n°{str_extract(Variable, '[0-9]$')}"),
+    str_detect(Variable, "PAR1") ~ 
+      glue("Parent n°1"),
+    str_detect(Variable, "PAR2") ~ 
+      glue("Parent n°2"),
     
     str_ends(Variable, "_C|_C[0-9]|_U") ~ 
       glue("Conjoint-e actuel/Dernier-e conjoint-e"),
@@ -158,7 +191,7 @@ vars_all2 <- vars_all2 %>%
       !is.na(Theme) ~ Theme,
       Qui == "ego" & str_detect(Variable, "LANGUE") ~ "Langues",
       Qui == "ego" & str_detect(Variable, "AIDE_") ~ "Aides",
-      Qui == "ego" & str_detect(Variable, "VECU|DEP_PARENT|HBERG") ~ "Jeunesse", 
+      Qui == "ego" & str_detect(Variable, "VECU|DEP_PARENT|HEBERG") ~ "Jeunesse", 
       Qui == "ego" & str_detect(Variable, "ENF") ~ "Parentalité",
       Qui == "ego" & str_detect(Variable, "COUPLE|MARI|PACS|AUT_UN") ~ "Conjugalité",
       Qui == "ego" & str_detect(Variable, "TRAV|EMP") ~ "Travail", 
@@ -228,7 +261,12 @@ generate_recode <- function(var_name, modalities) {
   # Construire la syntaxe recode()
   recode_pairs <- paste0('"', codes, '" = "', labels, '"' ,collapse = ", ")
   
-  glue::glue('BIEF <- BIEF %>% mutate({var_name} = recode(as.character({var_name}), {recode_pairs}))')
+  glue::glue('## {var_name}
+            freq(BIEF${var_name})
+            BIEF <- BIEF %>% mutate({var_name} = recode(as.character({var_name}), {recode_pairs}))
+            freq(BIEF${var_name})
+            
+             ')
 }
 
 # -----------------------------------------------------------------------
@@ -239,7 +277,7 @@ library(glue)
 recode_code <- map2_chr(vars_clean$Variable, vars_clean$Modalites, generate_recode)
 
 # Afficher les premières lignes du script généré
-cat(recode_code[1:20], sep = "\n\n")
+cat(recode_code[1:20], sep = "\n\n\n")
 
 # -----------------------------------------------------------------------
 # 5. (Optionnel) Écrire le script dans un fichier .R
@@ -254,3 +292,4 @@ source("2_analysis/2-2_recode_BIEF_2025.R")
 
 saveRDS(BIEF, file = "1_data/processed/BIEF.Rds")
 saveRDS(vars_all2, file = "1_data/processed/vars_all.Rds")
+saveRDS(liens, file = "1_data/processed/liens.Rds")
