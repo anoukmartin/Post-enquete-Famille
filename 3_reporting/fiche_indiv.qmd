@@ -1,24 +1,29 @@
 ---
 title: ""
 format: 
-  pdf:
-    documentclass: article          
-    geometry:                     
-      - left=1cm               
-      - right=1cm                
-      - top=1cm                  
-      - bottom=1cm              
-      - heightrounded              
+  # pdf:
+  #   documentclass: article          
+  #   geometry:                     
+  #     - left=1cm               
+  #     - right=1cm                
+  #     - top=1cm                  
+  #     - bottom=1cm              
+  #     - heightrounded    
+  html: default
 editor: visual
 params:
-  id_individu: " "
+  id_individu: "CAROLINE 1982-12-24"
   missing_values: FALSE
 editor_options: 
   chunk_output_type: console
+# header-includes:
+#  - \usepackage[absolute,overlay]{textpos}
+
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
 
 
 ```
@@ -36,21 +41,22 @@ if (!requireNamespace("here", quietly = TRUE)) {
 }
 library(here)
 
+initiale <- str_sub(params$id_individu, 1, 1)
 id_individu <- params$id_individu
 # Recharger BIEF
-BIEF <- readRDS(here("1_data", "processed", "BIEF.Rds")) %>%
+BIEF <- readRDS(here("1_data", "processed", "BIEF.rds")) %>%
     filter(identifiant == id_individu) 
 
 
 # Recharger vars_all
-vars_all <- readRDS(here("1_data", "processed", "vars_all.Rds")) 
+vars_all <- readRDS(here("1_data", "processed", "vars_all.rds")) 
 
 #Recharger liens 
 liens <- readRDS(here("1_data", "processed", "menages.rds")) %>%
   filter(identifiant == id_individu)
 
 #recharger coordonées 
-coordonnees <- readRDS(here("1_data", "processed", "coordonnees.RDS")) %>%
+coordonnees <- readRDS(here("1_data", "processed", "donnees_contact.rds")) %>%
     filter(identifiant == id_individu) 
 
 
@@ -64,18 +70,124 @@ cat("# Rapport pour ", id_individu)
 ```
 
 ```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+
+library(sf)
+library(ggplot2)
+library(maps)
+
+logement_sf <- st_as_sf(
+  coordonnees,
+  coords = c("longitude", "latitude"),
+  crs = 4326
+)
+# URL du shapefile ZIP officiel
+url <- "https://data.iledefrance.fr/explore/dataset/geoflar-departements/download/?format=shp"
+
+# Chemin temporaire pour télécharger le zip
+temp <- tempfile(fileext = ".zip")
+download.file(url, temp)
+
+# Décompresser le zip dans un dossier temporaire
+unzip_dir <- tempdir()
+unzip(temp, exdir = unzip_dir)
+
+# Trouver le fichier .shp dans le dossier décompressé
+shp_file <- list.files(unzip_dir, pattern = "\\.shp$", full.names = TRUE)
+
+# Lire le shapefile
+idf_sf <- st_read(shp_file[1])
+
+# Visualiser
+carte_idf <- ggplot(idf_sf) +
+  geom_sf(data = idf_sf, fill = "grey95", color = "grey60") +
+  geom_sf(data = logement_sf, color = "red", size = 2) +
+  coord_sf(expand = FALSE) +
+  theme_void()
+
+carte_idf
+
+# --- créer un dossier figures si nécessaire ---
+if(!dir.exists("figures")) dir.create("figures")
+
+# --- Sauvegarder la carte dans un PNG dans le projet ---
+png_file <- "figures/carte_idf.png"
+ggsave(png_file, plot = carte_idf, width = 3, height = 3, units = "in", dpi = 150)
+
+```
+
+
+```{=latex}
+\begin{textblock*}{4cm}(16cm,1.8cm) % largeur de 6cm, position x=1cm, y=1cm
+\includegraphics[width=4cm]{figures/carte_idf.png}
+\end{textblock*}
+```
+
+```{r}
 #| echo: false
+#| results: 'asis'
+
+library(ggplot2)
+library(sf)
+library(stringr)
+library(knitr)
+
+
+# --- créer un dossier figures si nécessaire ---
+if(!dir.exists("figures")) dir.create("figures")
+
+# --- Sauvegarder la carte dans un PNG dans le projet ---
+png_file <- "figures/carte_idf.png"
+ggsave(png_file, plot = carte_idf, width = 3, height = 3, units = "in", dpi = 150)
+
+texte_coordonnees <- paste0(
+  str_to_sentence(coordonnees$civilite), " ", coordonnees$PRENOM.x, " ", coordonnees$NOMFAMILLE, "\n\n",
+  "- \\textbf{Téléphone} : ", str_trim(coordonnees$POSTENQ_TEL), "\n\n",
+  "- \\textbf{Email} : ", str_trim(coordonnees$POSTENQ_MAIL), "\n\n",
+  "- \\textbf{Adresse} : ", coordonnees$AdresseConsolidee, "\n\n",
+  "- \\textbf{Complément d'adresse} : ", str_to_sentence(coordonnees$ComplementAdresse), "\n\n", 
+  "- \\textbf{Département} : ", coordonnees$result_context
+
+)
+
+
+cat("
+::: {.callout-important}
+### Informations de contact
+
+", texte_coordonnees, "
+
+
+:::
+")
+```
+
+```{r}
+#| echo: false
+#| include: false
 #| results: 'asis'
 
 cat("
 ::: {.callout-important}
 ### Informations de contact
 
-- **Téléphone** : ", coordonnees$POSTENQ_TEL, "
-- **Email** : ", coordonnees$POSTENQ_MAIL, "
-- **Adresse** : ", coordonnees$AdressePostale, coordonnees$ComplementAdresse, ", ", coordonnees$Commune, "
+", str_to_sentence(coordonnees$civilite), coordonnees$PRENOM.x,  coordonnees$NOMFAMILLE, "
+
+- **Téléphone** : ", str_trim(coordonnees$POSTENQ_TEL), "
+- **Email** : ", str_trim(coordonnees$POSTENQ_MAIL), "
+- **Adresse** : ", coordonnees$AdresseConsolidee, "
+
+")
+
+carte_idf
+
+cat("
 :::
 ")
+
 
 ```
 
@@ -85,17 +197,49 @@ cat("
 
 cat("
 ::: {.callout-note}
-### Composition du ménage
+### Résumé de situation socio-démographique
+
+#### Individu : 
+- Prénom : ", coordonnees$PRENOM.x, "
+- Nom : ", coordonnees$NOMFAMILLE, "
+- Age : ", 2026 - coordonnees$anai, "
+- Sexe : ", coordonnees$sexe, "
+- En emploi : ", coordonnees$situat, "
+- Niveau de diplôme : ", coordonnees$dipl, "
+- Statut d'emploi : ", coordonnees$empl,  "
+- Temps de travail : ", coordonnees$tp, "
+- Profession : ", str_to_sentence(coordonnees$profession) ,"
+- Entreprise : ", coordonnees$rs, "
+
+#### Situation conjugale
+- En couple : ", coordonnees$COUPLE, "
+- Statut matrimonial : ", coordonnees$matr, "
+
+#### (Dernier) conjoint 
+- Prénom : ", coordonnees$PRENOM_C, "
+- Age : ", 2026 - coordonnees$ANAI_C, "
+- Sexe : ", coordonnees$SEXE_C, "
+- Emploi du conjoint : ", coordonnees$STATUT_C, "
+
+#### Enfants 
+- Enfants dans le logement : ", coordonnees$enfants_logement, "
+- Enfants résidants ailleurs : ", coordonnees$enfants_ailleurs, "
+- Enfants du conjoint : ", coordonnees$ENFAV_C, "
+- Enfants décédés : ", coordonnees$nb_enfantsDCD, "
+
+#### Classement 
+- Sous-population d'apparenance : ", coordonnees$souspop,"
+- Situation familiale : ", coordonnees$description_personalisee, "
+
+:::
 
 ")
-knitr::kable(
-  liens,
-  caption = "Membres du ménage"
-)
-cat("
-:::
-")
+
+
+
 ```
+
+\newpage
 
 ```{r}
 

@@ -51,12 +51,137 @@ dt
 
 # Verification des critères de tirage
 
+## [Population d’intérêt et champ géographique]{.underline}
+
+### Champ géographique
+
+Nous avons considéré, nous pouvons prendre l'ensemble des départements de la région Île-de-France, c’est-à-dire les départements de Paris (75), du Val-de-Marne (94), de Seine-Saint-Denis (93), des Hauts-de-Seine (92), des Yvelines (78), de l’Essonne (91) ainsi que du Val d’Oise (95) ainsi que de la Seine et marne (77)[\[1\]](#_ftn1).
+
+```{r}
+freq(dt$codedepartement)
+
+```
+
+::: callout-note
+Tous les individus résident bien en Ile-de-France. Les départements les plus représentés sont le 77 et le 92, en lien avec leur plus grande taille. A l'inverse, le Val-de-marne et la seine saint denis sont plus faiblement représentés
+:::
+
+### Sous-populations d'interet
+
+Dans ces départements, on peut prendre, parmi les personnes qui ont au moins un enfant de moins de 27 ans[\[2\]](#_ftn2) (*\[ENF = « 1 »\] and (\[ANAI_ENFLOGX \>= 1999, pour au moins un X allant de 1 à CBENFLOG\] or \[ANAI_ENFAILY \>= 1999, pour au moins un Y allant de 1 à CBENFAIL\]*)
+
+```{r}
+# nombre d’enfants (égo)
+freq(dt$ENF)                  
+
+# année de naissance des enfants 
+dt <- dt %>%
+   mutate(ENF_1999 = case_when(
+    if_any(starts_with("ANAI_ENF"), ~ . >= 1999, na.rm = TRUE) ~ "Oui",
+    if_all(starts_with("ANAI_ENF"), ~ is.na(.)) ~ NA_character_,
+    TRUE ~ "Non"))
+# au moins un enfant est né en 1999 ou après
+freq(dt$ENF_1999)
+```
+
+::: callout-note
+Tous les individus présnts dans l'échantillon ont bien des enfants. Seuls 4 d'entre eux ne semble pas avoir d'enfant de moins de 27 ans (nés en 1999 ou après). Cela ne pose pas problème.
+:::
+
+(1)     **Les personnes qui se déclarent en couple et séparé du parent d’au moins un de leurs enfants (catégorie 1)**. On peut prendre l’ensemble de ces individus, c’est-à-dire l’ensemble de la sous-population 2 (« Population2 », vaut 1 si l’enquêtée déclare être séparé du parent d’au moins un enfant (logement ou hors logement) dans le *.csv* envoyé), soit 42 individus d’après mes calculs (peut-être un plus si on prend les enfants de moins de 27 ans).
+
+o   \[COUPLE = 1 ou 2\]
+
+o   & \[SEP_AUT_PAR_ENFLOGX = « 1 »\], pour au moins un *X allant de 1 à CBENFLO or* \[SEP_AUT_PAR_ENFAILY = « 1 »\] *pour au moins un Y allant de 1 à CBENFAIL*
+
+(2)     Pour compenser leur faible nombre, on peut introduire environ 70 individus qui déclarent également être **séparé du parent d’au moins un de leurs enfants, mais qui ne se déclarent pas en couple[\[3\]](#_ftn3) (catégorie 2)**
+
+o   \[COUPLE n’est pas = 1 ou 2 y compris si pas de réponse\]
+
+o   & \[SEP_AUT_PAR_ENFLOGX = « 1 »\], pour au moins un *X allant de 1 à CBENFLO or* \[SEP_AUT_PAR_ENFAILY = « 1 »\] *pour au moins un Y allant de 1 à CBENFAIL*
+
+(3)     Pour compléter, on peut enfin ajouter environ 70 individus qui déclarent être **en couple avec le parent de l’ensemble de leurs enfants. (catégorie 3)**
+
+o   *\[COUPLE = 1 ou 2\]*
+
+o   & \[SEP_AUT_PAR_ENFLOGX= « 2 », pour tout *X allant de 1 à CBENFLO\] &* \[SEP_AUT_PAR_ENFAILY = « 2 » *pour tout Y allant de 1 à CBENFAIL\].*
+
+## Sur-représentation de certaines situations
+
+Je ne sais pas si vous aviez pu vérifier que certaines situations étaient suffisamment présentes dans l’échantillon. Au cas où, je remets les critères en détaillant et précisant davantage.
+
+-            [**Situation résidentielle des enfants d’ego**]{.underline} :
+
+o   Dans les deux dernières catégories (donc 2 et 3), on cherche à diversifier les situations résidentielles des enfants des individus sélectionnés (\> \[CBENFAIL \>= 1\]). En effet, en l’état, il n’y a que 35 individus sur 200 qui ont au moins un enfant résidant dans un autre logement, dont 3 dans la catégorie (1) c’est-à-dire la « Population2 » dans le .*csv*
+
+o    En l’occurrence, il faudrait au moins 25 individus dont au moins un enfant est non-cohabitant dans chacune des catégories 2 et 3.
+
+-            [**Niveau de diplôme d’ego :**]{.underline}
+
+o   Dans les deuxièmes et troisième catégorie, on cherche également à diversifier les niveaux de diplôme des individus (\> \[RP_Q12\] ou \[dipl\] dans table BI). En l’état, les faibles niveaux de diplômes sont largement sous-représentés (69% de l’échantillon a un niveau de diplôme supérieur ou équivalent à a un bac +3), ce qui est probablement lié aux caractéristiques des individus acceptant d’être recontactés.
+
+o   En l’occurrence, dans l’idéal, il faudrait faire en sorte que dans les catégories 2 et 3, on ait au moins 50% d’individus (soit environ 35 dans chaque catégorie) ayant un niveau de diplôme inférieur à bac +3. Si ça n’est pas possible, car il n’y a pas assez d’individus, on peut descendre en dessous de 50%.
+
+-            [**Situation d’emploi d’ego**]{.underline}
+
+o   La situation d’emploi des individus sélectionnés (\> \[RP_Q13\] ou \[empl\] dans la table BI) est également une dimension sur laquelle on voudrait diversifier les situations. Actuellement, seuls 7 individus sur 200 déclarent être en CDD.
+
+o   On cherche à augmenter un peu cette part, à hauteur d’au moins 10 individus dans les catégories 2 et 3.
+
+-            [**Statut d’occupation du logement du ménage d’égo**]{.underline} :
+
+o   Enfin, on souhaite aussi que les différents statuts d’occupation soient suffisamment représentés au sein de l’échantillon (\> \[RP_Q6\], indisponible dans les BI, a priori disponible dans la table logement). Nous n’avons donc pas pu vérifier.
+
+o   On cherche à voir entre 30% minimum de locataires et 30% minimum de propriétaires dans les catégories 2 et 3, soit environ 20 individus à chaque fois
+
+[\[1\]](#_ftnref1) On a conservé la même logique pour pouvoir effectuer des entretiens en face à face, mais en élargissant la délimitation géographique pour avoir plus d’effectif
+
+[\[2\]](#_ftnref2) On a remonté l’âge limite des enfants à 27 ans au lieu de 21 pour avoir d’avantage d’effectif
+
+[\[3\]](#_ftnref3) On ajoute des parents célibataires (ou qui n’ont pas renseigné cet informations) pour compenser le plus faible nombre de parents en couple qui ont eu des enfants d’une union précédente.
+
+## TRASH
+
 ## Localisation géographique
 
 Dans la mesure du possible, l’ensemble des entretiens seraient réalisés en face à face, de préférence au domicile de l’enquêté, à défaut, un entretien en visio-conférence pourra etre proposé. C’est pourquoi, nous prévoyons de sélectionner des enquêtés résidants uniquement dans les départements du Val de Marne (94) et de l’Essonne (91). La sélection dans ces deux départements nous permettrait d’observer une variété de situations résidentielles tout en restant suffisamment proche de notre propre domicile et lieu de travail pour nous déplacer au domicile des individus enquêtés. Si ces restrictions posent problèmes, il est tout à fait possible d’envisager une autre délimitation géographique.
 
 ```{r}
+freq(dt$codedepartement)
+```
 
+```{r}
+freq(dt$COUPLE)
+
+dt <- dt %>%
+  mutate(
+  SEP_AUT_PAR_ENF = case_when(
+      if_any(starts_with("SEP_AUT_PAR_ENF"), ~ . == "Oui", na.rm = TRUE) ~ "Oui",
+      if_all(starts_with("SEP_AUT_PAR_ENF"), ~ is.na(.)) ~ NA_character_,
+      TRUE ~ "Non"
+    ),
+  AILL_AUT_PAR_ENF = case_when(
+      if_any(starts_with("PARENT_VIT"), ~ . %in% c("Non, il/elle vit ailleurs", "Non, il/elle est décédé(e)"), na.rm = TRUE) ~ "Oui",
+      if_all(starts_with("PARENT_VIT"), ~ is.na(.)) ~ NA_character_,
+      TRUE ~ "Non"
+    ))
+
+# enfants du conjoint d’un autre parent (<‑21 ans)
+freq(dt$ENFAV_C)      
+
+freq(dt$ENF21_AUTPAR_C2)
+library(stringr)
+table(dt$COUPLE, dt$SEP_AUT_PAR_ENF, useNA = "ifany")
+table(dt$COUPLE, dt$AILL_AUT_PAR_ENF)
+
+dt <- dt %>%
+  mutate(souspop = case_when(
+         str_starts(COUPLE, "Oui") & (SEP_AUT_PAR_ENF == "Oui" | ENFAV_C == "Oui")  ~ "Recomposée", 
+         str_starts(COUPLE, "Oui") & (SEP_AUT_PAR_ENF == "Non" | is.na(SEP_AUT_PAR_ENF)) ~ "Couple parental",  
+         str_starts(COUPLE, "Non")  ~ "Monoparentale", 
+         TRUE ~ "Autre situation"))
+
+freq(dt$souspop)
 ```
 
 ## Conjugalité et parentalité
