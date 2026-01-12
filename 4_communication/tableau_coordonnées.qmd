@@ -1,0 +1,23 @@
+---
+title: "Tableau des coordonnées"
+format: pdf
+geometry: landscape
+fontsize: 10pt
+header-includes:
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage{geometry}
+---
+
+```{r}
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+coordonnees_clean <- readRDS(here("1_data/coordonnes_contact.rds")
+# Exemple avec ton tableau coordonnees_clean
+
+coordonnees_clean %>%
+  kable(format = "latex", booktabs = TRUE, longtable = TRUE,
+        caption = "Tableau des coordonnées") %>%
+  kable_styling(latex_options = c("repeat_header", "scale_down"))

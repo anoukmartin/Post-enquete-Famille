@@ -4,26 +4,42 @@ format:
   pdf:
     include-in-header: lettre_officielle.sty
 params:
-  Civilite: "{CIVILITE}"
-  Prenom: "{PRENOM}"
-  Nom: "{NOM}"
-  Adresse: "{ADRESSE}"
-  CP: "{CP}"
-  Commune: "{COMMUNE}"
-  Infos_familiales: "{SITUATION FAMILIALE}"
+  email: "anouk.martin35@univ-paris8.fr"
+  phone: 0671793218
+  id_individu: "LAUREEN 1994-10-10"
 ---
 
 ```{r, include = F}
 library(knitr)
-if(params$Civilite == "Madame"){recontacte <- "recontactée"} else {
-  if(params$Civilite == "Monsieur"){recontacte <- "recontacté"} else {
+library(dplyr)
+library(here)
+library(stringr)
+infos <- readRDS(here("1_data/processed/donnees_contact.rds")) %>%
+  filter(identifiant == params$id_individu)
+infos$Civilite <- infos$civilite
+infos$Prenom <- infos$PRENOM.x
+infos$Nom <- infos$NOMFAMILLE
+
+n <- str_locate(infos$AdresseConsolidee, "\\d{5}")[[1, 1]]
+infos$Adresse <- paste0(str_sub(infos$AdresseConsolidee, 1, n-1), 
+                        " \\\\ ", 
+                        str_sub(infos$AdresseConsolidee, n, -1))
+                                
+infos$Infos_familiales <- infos$description_personalisee
+
+if(infos$Civilite == "Madame"){recontacte <- "recontactée"} else {
+  if(infos$Civilite == "Monsieur"){recontacte <- "recontacté"} else {
     recontacte <- "{RECONTACTE/EE}"
   }}
+
+infos$contact <- ifelse(
+  infos$POSTENQ_TEL != "" & infos$POSTENQ_MAIL != "",
+  paste(infos$POSTENQ_TEL, infos$POSTENQ_MAIL, sep = " / "),
+  paste0(infos$POSTENQ_TEL, infos$POSTENQ_MAIL)
+)
 ```
 
-\vspace{8em}
-
-\destinataire{`r params$Civilite` `r params$Nom` `r params$Prenom` \\ `r params$Adresse` \\ `r params$CP` `r params$Commune`}
+\vspace{15em}
 
 \datelettre
 
@@ -31,20 +47,63 @@ if(params$Civilite == "Madame"){recontacte <- "recontactée"} else {
 
 \vspace{1em}
 
-
-`r params$Civilite` `r params$Nom`,
-
+`r infos$Civilite` `r infos$Nom`,
 
 Vous avez participé en début d’année 2025 à une enquête de l’Institut national de la statistique et des études économiques (Insee), associée au recensement de la population, portant sur les familles. Nous vous remercions pour votre contribution à cette opération statistique.
 
 Lors de votre réponse à l’enquête Familles, vous avez accepté d’être `r recontacte` pour un entretien complémentaire réalisé par un chercheur, afin d’approfondir certains aspects abordés dans le questionnaire. C’est dans ce cadre que je vous contacte aujourd’hui.
 
-L’entretien proposé s’inscrit dans un projet de recherche portant sur la prise en charge matérielle, affective et administrative des enfants. Votre expérience en tant que `r params$Infos_familiales` constitue un apport particulièrement précieux pour ce travail scientifique.
+Je mène actuelle projet de recherche portant sur la prise en charge matérielle, affective et administrative des enfants. Votre expérience en tant que `r infos$Infos_familiales` constitue un apport particulièrement précieux pour ce travail scientifique. C'est pourquoi je souhaite vous proposer un entretien.
 
-L’entretien sera conduit par moi-même, Mme Anouk Martin, doctorante en sociologie au Centre de recherches sociologiques et politiques de Paris (CRESPPA – CNRS, Université Paris 8). Dans la mesure du possible, il se déroulera en face à face à votre domicile, durera environ 1h30 et pourra être enregistré, sous réserve de votre accord préalable. Je prendrai prochainement contact avec vous afin de convenir d’un rendez-vous. Vous pouvez également me joindre directement par courriel (anouk.martin34\@etud.univ-paris8.fr) ou par téléphone (06 32 50 67 28).
+L’entretien sera conduit par moi-même, Mme Anouk Martin, doctorante en sociologie au Centre de recherches sociologiques et politiques de Paris (CRESPPA – CNRS, Université Paris 8). Dans la mesure du possible, l’entretien se déroulera en face à face à votre domicile. Il durera environ 1h30. Avec votre accord préalable, il pourra être enregistré. Je prendrai prochainement contact aux coordonnées renseignées pour l'enquête Familles (`r infos$contact`) avec vous afin de convenir d’un rendez-vous. Vous pouvez également me joindre directement par courriel (`r params$email`) ou par téléphone (`r params$phone`).
 
-Cet entretien est réalisé exclusivement à des fins de recherche scientifique, dans le respect du cadre légal en vigueur. Vos réponses seront traitées de manière strictement confidentielle, anonymisées, et ne seront transmises à aucun tiers. Vous trouverez ci-joint une notice précisant les modalités de l’entretien et les garanties de confidentialité.
+Je réalise cet entretien exclusivement à des fins de recherche scientifique, dans le respect du cadre légal en vigueur. Vos réponses seront traitées de manière strictement confidentielle. Elles seront anonymisées et ne seront transmises à aucun tiers. Vous trouverez ci-joint une notice précisant les modalités de l’entretien et les garanties de confidentialité.
 
-Je vous remercie par avance de l’attention portée à cette démarche, et vous prie d’agréer, `r params$Civilite` `r params$Nom`, l’expression de ma considération distinguée.
+Je vous remercie par avance de l’attention portée à cette démarche, et vous prie d’agréer, `r infos$Civilite` `r infos$Nom`, l’expression de ma considération distinguée.
 
-\signature{Anouk MARTIN \\ Doctorante au CRESPPA, UMR 7217, Université Paris 8 \\ anouk.martin34\@etud.univ-paris8.fr \\ 06 32 50 67 28 \\ 59-61 rue Pouchet 75849 Paris Cedex 17}
+\signature{\includegraphics[width=5cm]{signature_anouk_sans_fond.png} \\ Anouk MARTIN \\ \scriptsize Responsable de l'enquête par entretiens \\ Doctorante au CRESPPA, UMR 7217, Université Paris 8 \\ `r params$email` / `r params$phone` \\ 59-61 rue Pouchet 75849 Paris Cedex 17 \\
+}
+
+\destinataire{%
+`r infos$Civilite` `r infos$Prenom` `r infos$Nom` \\
+`r infos$Adresse` \\
+}
+
+
+\newpage
+
+\begin{NoticeCompacte}
+
+\large{\textbf{\underline{Notice d'information sur le déroulement des entretiens et la confidentialité : }}}
+\vspace{1em}
+
+\footnotesize
+Dans le cadre de l’enquête Familles, réalisée par l’Institut national de la statistique et des études économiques (Insee), certaines personnes ont accepté d’être recontactées pour participer à un entretien complémentaire mené à des fins de recherche scientifique. La présente notice a pour objet d’informer les personnes concernées sur le déroulement de ces entretiens, le traitement des données recueillies et les garanties mises en place pour assurer la confidentialité et la protection des informations personnelles.
+\vspace{1em}
+
+\textbf{\underline{Déroulement de l’entretien}}
+
+L’entretien est réalisé par un chercheur ou une chercheuse dans le cadre d’un projet de recherche scientifique. Il se déroule en présentiel, en principe au domicile de la personne interrogée, à une date et un horaire convenus au préalable. Si l’entretien ne peut avoir lieu au domicile, un autre lieu pourra être proposé d’un commun accord. La participation à l’entretien est volontaire. La personne interrogée est libre de répondre ou non aux questions posées et peut interrompre l’entretien à tout moment, sans avoir à se justifier. Avec l’accord explicite de la personne interrogée, l’entretien peut faire l’objet d’un enregistrement audio, destiné exclusivement à permettre une retranscription fidèle des échanges.
+
+\underline{Traitement des données et cadre juridique}
+
+Les entretiens sont réalisés dans le respect du règlement (UE) 2016/679 du 27 avril 2016 relatif à la protection des données à caractère personnel (RGPD), ainsi que de la loi n° 78-17 du 6 janvier 1978 modifiée relative à l’informatique, aux fichiers et aux libertés. Les données collectées dans le cadre des entretiens sont traitées exclusivement à des fins de recherche scientifique.
+
+\underline{Conservation et confidentialité des données}
+
+Les données permettant d’identifier les personnes interrogées (coordonnées, identité) sont conservées de manière sécurisée. Elles sont utilisées uniquement pour l’organisation et la réalisation des entretiens et ne sont communiquées à aucun tiers. Elles sont détruites au plus tard trois mois après la fin de la phase d’entretiens. 
+
+Les enregistrements audio et les retranscriptions intégrales des entretiens sont conservés de manière sécurisée et ne sont communiqués à aucun tiers. Ils sont détruits au plus tard un an après la fin des entretiens. Au plus tard un an après la fin des entretiens, les retranscriptions sont anonymisées : les noms, prénoms et toute information permettant une identification directe ou indirecte (lieux, entreprises, prénoms de proches, etc.) sont supprimés ou remplacés. Les retranscriptions anonymisées peuvent être conservées et archivées à des fins de recherche scientifique ou historique. Des extraits d’entretiens anonymisés peuvent être cités dans des publications scientifiques (articles, ouvrages), sans qu’il soit possible d’identifier les personnes concernées.
+
+La confidentialité des informations recueillies s’exerce dans les limites prévues par la loi. Elle ne s’applique pas en cas de faits constitutifs d’un crime ou de violences commises à l’encontre d’un mineur ou d’une personne vulnérable.
+
+\underline{Droits des personnes}
+
+Conformément à la réglementation en vigueur, les personnes interrogées disposent d’un droit d’accès, de rectification et de limitation du traitement des données les concernant, pendant la durée de conservation des données d’identification. Ces droits peuvent être exercés auprès de la responsable du traitement à l’adresse suivante : `r params$email`. Les personnes concernées peuvent également, si elles l’estiment nécessaire, adresser une réclamation à la Commission nationale de l’informatique et des libertés (CNIL).
+
+\underline{Consentement}
+
+L’ensemble des informations et garanties décrites dans la présente notice sera rappelé oralement et par écrit au moment de la signature du formulaire de consentement préalable à l’entretien.
+
+\end{NoticeCompacte}
+

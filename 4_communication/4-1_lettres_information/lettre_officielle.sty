@@ -24,6 +24,13 @@
 \usepackage{fancyhdr}
 \usepackage{lastpage}
 
+\usepackage{tcolorbox}
+\usepackage{changepage}  % pour adjustwidth
+\usepackage{titlesec}    % pour gérer espacement des titres
+
+% Titres serrés
+\titlespacing*{\section}{0pt}{0.5\baselineskip}{0.3\baselineskip}
+\titlespacing*{\subsection}{0pt}{0.4\baselineskip}{0.2\baselineskip}
 
 \usepackage{fancyhdr}
 \pagestyle{fancy}
@@ -39,14 +46,9 @@
   \fancyhead[L]{\includegraphics[height=2cm]{3_logo.png}}
 }
 
+\setlength{\headheight}{50pt}
+\setlength{\headsep}{20pt}
 
-% Adresse du destinataire (en haut à droite)
-\newcommand{\destinataire}[1]{
-  \begin{flushright}
-  #1
-  \end{flushright}
-  \vspace{1em}
-}
 
 % Date (par défaut la date du jour)
 \newcommand{\datelettre}[1][\today]{
@@ -58,11 +60,40 @@
 
 % Signature alignée à droite
 \newcommand{\signature}[1]{
-  \vspace{1cm}
+  \vspace{0cm}
+  \small
   \begin{flushright}
   #1
   \end{flushright}
+  \normalsize
 }
 
+\newcommand{\destinataire}[1]{%
+\clearpage
+\thispagestyle{empty}
 
+\vspace*{5.5cm}   % distance depuis le haut de la page
+\hspace*{2.5cm}   % distance depuis le bord gauche
+
+\begin{minipage}{9cm}
+#1
+\end{minipage}
+}
+
+% -----------------------------
+% Commande pour notice compacte
+% -----------------------------
+
+
+\newenvironment{NoticeCompacte}{
+  % Marges réduites
+  \begin{adjustwidth}{-1cm}{-1cm}
+  % Espacement vertical
+  \setlength{\parskip}{0.2em}
+  \setlength{\baselineskip}{11pt}
+  % Footnotes compactes
+  % Titres serrés
+}{
+  \end{adjustwidth}
+}
 \pagestyle{plain}
