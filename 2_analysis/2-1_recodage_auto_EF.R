@@ -6,6 +6,12 @@
 library(tidyverse)
 library(readxl)
 library(glue)
+library(dplyr)
+library(purrr)
+library(stringr)
+library(fuzzyjoin)
+library(questionr
+        )
 
 # -----------------------------------------------------------------------
 # 1. Charger les données
@@ -15,6 +21,7 @@ library(glue)
 EF <- readRDS(file = "1_data/processed/EF.rds")
 BI <- readRDS(file = "1_data/processed/BI.rds") 
 liens <- readRDS(file = "1_data/processed/liens.rds")
+coordonnees <- readRDS(file = "1_data/processed/coordonnees.rds")
 
 names(EF)
 names(BI)
@@ -31,6 +38,7 @@ liens <- liens  %>%
 # les deux alexandra
 BI[BI$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- paste0("ALEXANDRA 1973-05-09", c(" N°1", " N°2"))
 EF[EF$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- paste0("ALEXANDRA 1973-05-09", c(" N°1", " N°2"))
+coordonnees[coordonnees$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- paste0("ALEXANDRA 1973-05-09", c(" N°1", " N°2"))
 liens[liens$identifiant == "ALEXANDRA 1973-05-09", "identifiant"][1:3] <- "ALEXANDRA 1973-05-09 N°1"
 liens[liens$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- "ALEXANDRA 1973-05-09 N°2"
 
@@ -78,6 +86,7 @@ rm(gender_var)
 EF$ADOPT_ENFLOG1
 # On ajoute des variables qui manque 
 head(vars_EF)
+EF$QUI_AID_RE
 vars_EF <- bind_rows(vars_EF, 
                  data.frame(Variable = c("AG_ENFLOG1", 
                                          "AG_ENFAIL1", 
@@ -85,17 +94,21 @@ vars_EF <- bind_rows(vars_EF,
                                          "ADOPT_ENFAIL1", 
                                          "ANADOPT_ENFLOG1", 
                                          "ANADOPT_ENFAIL1", 
-                                         "PNAI_PAR1"), 
+                                         "PNAI_PAR1", 
+                                         "QUI_AID_APP_1", 
+                                         "QUI_AID_REC_1"), 
                             Question = c("Age de l'enfant vivant dans le logement",
                                          "Age de l'enfant vivant ailleur", 
                                          "Adoption de l'enfant vivant dans le logement",
                                          "Adoption de l'enfant vivant ailleur", 
                                          "Année de l'adoption de l'enfant vivant dans le logement", 
                                          "Année de l'adoption de l'enfant vivant ailleur", 
-                                         "Pays de naissance du parent"),
-                            Modalites = c(NA, NA, rep("1 - Oui | 2 - Non", 2), NA, NA, NA),
+                                         "Pays de naissance du parent", 
+                                         "Aide apportée à qui ?", 
+                                         "Aide reçue de la part  de qui ?"),
+                            Modalites = c(NA, NA, rep("1 - Oui | 2 - Non", 2), NA, NA, NA, NA, NA),
                             Type = c("Quantitative", "Quantitative", "Qualitative", "Qualitative", 
-                                     "Quantitative", "Quantitative", "Qualitative")))
+                                     "Quantitative", "Quantitative", "Qualitative",  "Qualitative",  "Qualitative")))
 
 
 head(vars_BI)
@@ -108,6 +121,9 @@ rm(temp)
 
 
 names(EF)[str_starts(names(EF), "RP")] <- str_remove(names(EF)[str_starts(names(EF), "RP")], "RP")
+
+
+
 
 # On fusionne les deux tableau de données (EAR) et (EF)
 vars_BI$Source <- "EAR"
@@ -128,18 +144,56 @@ correspondances <- trouver_correspondances(names(BIEF), vars_all$Variable, seuil
 # Afficher les résultats
 print(correspondances)
 correspondances <- correspondances %>%
-  filter(lv_similarity <=1)%>%
+  #filter(lv_similarity <=2)%>%
+  mutate(Variable.y = case_when(
+    jw_similarity >= 0.121 ~ NA, 
+    TRUE ~ Variable.y
+  )) %>%
   select(Variable.x, Variable.y) %>%
   rename(Variable = Variable.x, Var = Variable.y)
 vars_all$i <- row.names(vars_all)
 
 # Tableau de TOUTES LES VARIABLES 
-vars_all2 <- left_join(correspondances, vars_all, by = c("Var" = "Variable")) %>%
+vars_all2 <- left_join(correspondances, vars_all %>% filter(!is.na(Variable)), by = c("Var" = "Variable")) %>%
   mutate(i = as.integer(i)) %>%
-  arrange(i)
+  arrange(i) 
+orph <- vars_all2 %>%
+  filter(is.na(Var)) %>%
+  mutate(Source = case_when(
+    str_detect(Variable, "[lower]") ~ "EAR", 
+    TRUE ~ "EF"
+  )) %>%
+  mutate(Question = case_when(
+    str_detect(Variable, regex('sexe|sex', ignore_case = T)) ~ "Sexe",
+    str_detect(Variable, regex('age', ignore_case = T)) ~ "Age",
+    str_detect(Variable, regex('anais|anai|annai', ignore_case = T)) ~ "Année de naissance",
+    str_detect(Variable, regex('mnais|mnai', ignore_case = T)) ~ "Mois de naissance",
+    str_detect(Variable, regex('jnais|jnai', ignore_case = T)) ~ "Jour de naissance",
+    str_detect(Variable, regex('datenai', ignore_case = T)) ~ "Date de naissance",
+    str_detect(Variable, regex('lieunai', ignore_case = T)) ~ "Lieu de naissance",
+    str_detect(Variable, regex('nai|nais', ignore_case = T)) ~ "Naissance",
+    str_detect(Variable, regex('prenom', ignore_case = T)) ~ "Prénom", 
+    str_detect(Variable, regex('nom', ignore_case = T)) ~ "Nom de famille", 
+    str_detect(Variable, regex('trav', ignore_case = T)) ~ "Travail", 
+    str_detect(Variable, regex('sal_ind', ignore_case = T)) ~ "Salarié? indépendant?",
+    str_detect(Variable, regex('sal_fp', ignore_case = T)) ~ "Salarié de la fonction publique",
+    str_detect(Variable, regex('sal_ent', ignore_case = T)) ~ "Salarié d'une entreprise",
+    str_detect(Variable, regex('cont', ignore_case = T)) ~ "Contact", 
+    str_detect(Variable, regex('mail', ignore_case = T)) ~ "Mail", 
+    str_detect(Variable, regex('tel', ignore_case = T)) ~ "Tel",
+    str_detect(Variable, regex('prox_ego', ignore_case = T)) ~ "Habite a proximité d'égo",
+    str_detect(Variable, regex('prox_fra', ignore_case = T)) ~ "Habite a proximité des frères/soeurs",
+    str_detect(Variable, regex('codegeo', ignore_case = T)) ~ "Code géographique",
+    str_detect(Variable, regex('iris', ignore_case = T)) ~ "Code Iris",
+    str_detect(Variable, regex('codedepartement', ignore_case = T)) ~ "Code Département",
+    str_detect(Variable, regex('rga', ignore_case = T)) ~ "Code RGA",
+    str_detect(Variable, regex('rgl', ignore_case = T)) ~ "Code RGL",
+  ))
 
-anomalie1 <- names(BIEF)[!(names(BIEF) %in% vars_all2$Variable)]
-anomalie1
+
+vars_all2 <- vars_all2 %>%
+  filter(!is.na(Var)) %>%
+  bind_rows(orph)
 
 vars_all2 <- vars_all2 %>%
 mutate(
@@ -165,7 +219,7 @@ mutate(
     str_detect(Variable, "PAR2") ~ 
       glue("Parent n°2"),
     
-    str_ends(Variable, "_C|_C[0-9]|_U") ~ 
+    str_ends(Variable, "_C|_C[0-9]|_U|CJT|CONJ|CJ") ~ 
       glue("Conjoint-e actuel/Dernier-e conjoint-e"),
     
     str_ends(Variable, "_U1") ~ 
@@ -190,12 +244,15 @@ vars_all2 <- vars_all2 %>%
     Theme = case_when(
       !is.na(Theme) ~ Theme,
       Qui == "ego" & str_detect(Variable, "LANGUE") ~ "Langues",
-      Qui == "ego" & str_detect(Variable, "AIDE_") ~ "Aides",
+      Qui == "ego" & str_detect(Variable, "AID_|AIDE_") ~ "Aides",
       Qui == "ego" & str_detect(Variable, "VECU|DEP_PARENT|HEBERG") ~ "Jeunesse", 
       Qui == "ego" & str_detect(Variable, "ENF") ~ "Parentalité",
       Qui == "ego" & str_detect(Variable, "COUPLE|MARI|PACS|AUT_UN") ~ "Conjugalité",
       Qui == "ego" & str_detect(Variable, "TRAV|EMP") ~ "Travail", 
       Qui == "ego" & str_detect(Variable, "ETU") ~ "Etudes",
+      Qui == "ego" & str_detect(Variable, "POSTENQ") ~ "Post-enquête",
+      Qui == "ego" & str_detect(Variable, regex("iris|rga|rgl|codegeo|codedepartement", ignore_case = T)) ~ "Localisation",
+      Qui == "ego" & str_detect(Variable, "id|ID|Id") ~ "Technique",
     Qui == "ego" ~ "id"
   ))
 
@@ -290,6 +347,7 @@ source("2_analysis/2-2_recode_BIEF_2025.R")
 
 # Après exécution, toutes les variables codées numériquement auront des libellés texte
 
-saveRDS(BIEF, file = "1_data/processed/BIEF.Rds")
-saveRDS(vars_all2, file = "1_data/processed/vars_all.Rds")
-saveRDS(liens, file = "1_data/processed/liens.Rds")
+saveRDS(BIEF, file = "1_data/processed/BIEF.rds")
+saveRDS(vars_all2, file = "1_data/processed/vars_all.rds")
+saveRDS(liens, file = "1_data/processed/liens.rds")
+saveRDS(coordonnees, file = "1_data/processed/coordonnees.rds")

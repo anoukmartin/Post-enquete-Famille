@@ -1,7 +1,7 @@
 library(stringr)
 library(dplyr)
 
-liens <- readRDS(file = "1_data/processed/liens.Rds")
+liens <- readRDS(file = "1_data/processed/liens.rds")
 ## Liens
 BIEF$anai
 egos <- BIEF %>%
@@ -39,7 +39,7 @@ saveRDS(menages, file = "1_data/processed/menages.rds")
 
 ## Coordonnées
 
-saveRDS(coordonnees, file = "1_data/processed/coordonnees.RDS")
+saveRDS(coordonnees, file = "1_data/processed/coordonnees.rds")
 
 codecommunes <- read_csv("https://www.data.gouv.fr/api/1/datasets/r/7acc46ad-1c79-43d9-8f2d-d0a8ec78c068")
 codecommunes$Commune <- paste0(codecommunes$nomCommune, " (", codecommunes$codeDepartement, ")")
@@ -51,6 +51,5 @@ BIEF <- BIEF %>%
                 ~ codecommunes$Commune[match(.x, codecommunes$codeCommune)]))
 
 
-
-saveRDS(BIEF, file = "1_data/processed/BIEF.Rds")
+saveRDS(BIEF, file = "1_data/processed/BIEF.rds")
 

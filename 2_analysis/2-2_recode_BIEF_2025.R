@@ -1438,6 +1438,11 @@ freq(BIEF$SEXE_PAR1)
 BIEF <- BIEF %>% mutate(SEXE_PAR1 = recode(as.character(SEXE_PAR1), "1" = "Une femme", "2" = "Un homme"))
 freq(BIEF$SEXE_PAR1)
 
+## SEXPAR1
+freq(BIEF$SEXPAR1)
+BIEF <- BIEF %>% mutate(SEXPAR1 = recode(as.character(SEXPAR1), "1" = "Une femme", "2" = "Un homme"))
+freq(BIEF$SEXPAR1)
+
 ## NATIO_PAR1
 freq(BIEF$NATIO_PAR1)
 BIEF <- BIEF %>% mutate(NATIO_PAR1 = recode(as.character(NATIO_PAR1), "1" = "Oui", "2" = "Non", "3" = "Je ne sais pasQuestionnaire BVA : « Vous ne savez pas »", "4" = "Je ne souhaite pas répondreQuestionnaire BVA : « Vous ne souhaitez pas répondre »"))
@@ -1502,6 +1507,11 @@ freq(BIEF$EXIST_PAR2)
 freq(BIEF$SEXE_PAR2)
 BIEF <- BIEF %>% mutate(SEXE_PAR2 = recode(as.character(SEXE_PAR2), "1" = "Une femme", "2" = "Un homme"))
 freq(BIEF$SEXE_PAR2)
+
+## SEXPAR2
+freq(BIEF$SEXPAR2)
+BIEF <- BIEF %>% mutate(SEXPAR2 = recode(as.character(SEXPAR2), "1" = "Une femme", "2" = "Un homme"))
+freq(BIEF$SEXPAR2)
 
 ## NATIO_PAR2
 freq(BIEF$NATIO_PAR2)
