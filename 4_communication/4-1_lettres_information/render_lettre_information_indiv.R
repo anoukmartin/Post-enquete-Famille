@@ -6,7 +6,7 @@ library(quarto)
 library(progress)
 
 # Dossier de sortie
-output_dir <- "4_communication/individus"
+output_dir <- "4_communication/lettres_info"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Suivi des rendus
@@ -68,3 +68,91 @@ if (all(produit)) {
   cat("\n✔ Rapports générés : ",
       sum(produit), "/", length(produit), "\n", sep = "")
 }
+
+
+# Script d'exportation de fichiers vers WebDAV
+
+library(httr)
+library(tools)
+
+## Encoding 
+encode_path <- function(path) {
+  gsub("%2F", "/", URLencode(path, reserved = TRUE))
+}
+
+# Fonction de logging
+log_message <- function(message, level = "INFO") {
+  timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+  cat(sprintf("[%s] [%s] %s\n", timestamp, level, message))
+}
+
+# Configuration WebDAV
+config_export <- list(
+  base_url = "https://sdrive.cnrs.fr/remote.php/dav/files/1426185",
+  remote_path = "Thèse/Post-enquête/Materiel_de_communications/lettres_info",
+  local_path = output_dir
+)
+
+# Fonction d’upload sécurisé
+upload_webdav_file <- function(local_file, remote_url, user, password) {
+  tryCatch({
+    #log_message(paste("Export de", basename(local_file)))
+    
+    res <- PUT(
+      url = remote_url,
+      authenticate(user, password),
+      body = upload_file(local_file)
+    )
+    
+    stop_for_status(res)
+    
+    log_message(paste("Export réussi pour", basename(local_file)))
+    TRUE
+  }, error = function(e) {
+    log_message(
+      paste("Erreur lors de l'export de", basename(local_file), ":", e$message),
+      "ERROR"
+    )
+    FALSE
+  })
+}
+
+# Vérification du dossier local
+if (!dir.exists(config_export$local_path)) {
+  stop("Le dossier local n'existe pas :", config_export$local_path)
+}
+
+
+# Liste des fichiers à exporter
+files_to_upload <- list.files(
+  config_export$local_path,
+  full.names = TRUE,
+  recursive = FALSE
+)
+
+if (length(files_to_upload) == 0) {
+  stop("Aucun fichier à exporter dans le dossier local")
+}
+
+# Export des fichiers
+for (file in files_to_upload) {
+  remote_url <- paste0(
+    config_export$base_url, "/",
+    encode_path(
+      paste0(config_export$remote_path, "/", basename(file))
+    )
+  )
+  
+  success <- upload_webdav_file(
+    local_file = file,
+    remote_url = remote_url,
+    user = Sys.getenv("USER_SSPCLOUD"),
+    password = Sys.getenv("MDP_SSPCLOUD")
+  )
+  
+  if (!success) {
+    stop("Arrêt du script suite à une erreur d'export")
+  }
+}
+
+log_message("Export des fichiers terminé avec succès")

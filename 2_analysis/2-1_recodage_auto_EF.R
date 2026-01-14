@@ -12,7 +12,7 @@ library(stringr)
 library(fuzzyjoin)
 library(questionr
         )
-
+source("fonctions/match_vars.R")
 # -----------------------------------------------------------------------
 # 1. Charger les données
 # -----------------------------------------------------------------------

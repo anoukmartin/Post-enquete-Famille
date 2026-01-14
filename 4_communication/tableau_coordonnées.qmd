@@ -1,23 +1,70 @@
 ---
-title: "Tableau des coordonnées"
+title: ""
 format: pdf
-geometry: landscape
+geometry: landscape, margin=5mm
 fontsize: 10pt
 header-includes:
   - \usepackage{longtable}
   - \usepackage{booktabs}
   - \usepackage{geometry}
+  - \renewcommand{\arraystretch}{2}
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
-```{r}
-library(dplyr)
-library(knitr)
+```{r echo=F}
+#| message: false
+#| warning: false
+#| paged-print: true
+
+library(dplyr) 
+library(tidyverse)
+library(knitr) 
 library(kableExtra)
+library(here)
+library(stringr)
 
-coordonnees_clean <- readRDS(here("1_data/coordonnes_contact.rds")
-# Exemple avec ton tableau coordonnees_clean
+coordonnees_clean <- readRDS(here("1_data/coordonnees_contact.rds")) %>%
+  arrange(identifiant) %>%
+  mutate(initiale = substr(identifiant, 1, 1))  %>%
+  rownames_to_column("n") %>%
+  select(-AdresseSimple, - CPCommune)
 
-coordonnees_clean %>%
-  kable(format = "latex", booktabs = TRUE, longtable = TRUE,
-        caption = "Tableau des coordonnées") %>%
-  kable_styling(latex_options = c("repeat_header", "scale_down"))
+
+tbl <- coordonnees_clean %>% 
+  select(-initiale) %>%
+  kable(
+    format = "latex",
+    booktabs = TRUE,
+    longtable = TRUE,
+    caption = "Tableau des coordonnées",
+    align = "p{0.5cm}p{4cm}p{1.5cm}p{3cm}p{1.5cm}p{5cm}p{4cm}p{2cm}"
+  ) %>%
+  kable_styling(
+    latex_options = c("repeat_header", "scale_down", "striped"),
+    font_size = 9
+  )
+
+# ajout des groupes avec pack_rows
+initiales <- unique(coordonnees_clean$initiale)
+
+start <- 1
+for (i in initiales) {
+  n <- sum(coordonnees_clean$initiale == i)
+  tbl <- tbl %>%
+    pack_rows(
+      group_label = i,
+      start_row = start,
+      end_row = start + n - 1,
+      hline_after = T,
+      bold = TRUE
+    )
+  start <- start + n
+}
+
+tbl
+
+
+```         
+

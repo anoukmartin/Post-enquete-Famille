@@ -27,6 +27,9 @@
 \usepackage{tcolorbox}
 \usepackage{changepage}  % pour adjustwidth
 \usepackage{titlesec}    % pour gérer espacement des titres
+\usepackage[absolute,overlay]{textpos}
+\setlength{\TPHorizModule}{1mm}
+\setlength{\TPVertModule}{1mm}
 
 % Titres serrés
 \titlespacing*{\section}{0pt}{0.5\baselineskip}{0.3\baselineskip}
@@ -69,15 +72,16 @@
 }
 
 \newcommand{\destinataire}[1]{%
-\clearpage
-\thispagestyle{empty}
-
-\vspace*{5.5cm}   % distance depuis le haut de la page
-\hspace*{2.5cm}   % distance depuis le bord gauche
-
-\begin{minipage}{9cm}
-#1
-\end{minipage}
+  \clearpage
+  \thispagestyle{empty}
+  \noindent
+  \begin{textblock*}{80mm}(110mm,150mm)
+  \large
+  \noindent
+  #1
+  \normalsize
+  \end{textblock*}
+  
 }
 
 % -----------------------------

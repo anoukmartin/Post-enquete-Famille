@@ -1,7 +1,7 @@
 
 
 packages <- c("dplyr", "ggplot2", "tidyverse", "readr", "stringr", "data.table", 
-              "readODS", "fuzzyjoin", "glue", "kableExtra", "questionr")
+              "readODS", "fuzzyjoin", "glue", "kableExtra", "questionr", "here", "banR", "tidygeocoder")
 
 
 # Charger le package devtools

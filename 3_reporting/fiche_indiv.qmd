@@ -1,24 +1,24 @@
 ---
 title: ""
-format: 
-  # pdf:
-  #   documentclass: article          
-  #   geometry:                     
-  #     - left=1cm               
-  #     - right=1cm                
-  #     - top=1cm                  
-  #     - bottom=1cm              
-  #     - heightrounded    
-  html: default
+format:
+  pdf:
+    documentclass: article
+    geometry: 
+      - left=1cm
+      - right=1cm
+      - top=1cm
+      - bottom=1cm
+      - heightrounded
+    header-includes: 
+      - \usepackage[absolute,overlay]{textpos}
+  #html: default
 editor: visual
 params:
   id_individu: "CAROLINE 1982-12-24"
   missing_values: FALSE
+  full_report: FALSE
 editor_options: 
   chunk_output_type: console
-# header-includes:
-#  - \usepackage[absolute,overlay]{textpos}
-
 ---
 
 ```{r setup, include=FALSE}
@@ -28,7 +28,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 
 ```
 
-```{r}
+```{r, results='asis'}
 
 library(dplyr)
 library(tidyverse)
@@ -59,15 +59,10 @@ liens <- readRDS(here("1_data", "processed", "menages.rds")) %>%
 coordonnees <- readRDS(here("1_data", "processed", "donnees_contact.rds")) %>%
     filter(identifiant == id_individu) 
 
-
-```
-
-```{r, results = 'asis'}
-
 cat("# Rapport pour ", id_individu)
 
-
 ```
+
 
 ```{r}
 #| message: false
@@ -119,7 +114,6 @@ ggsave(png_file, plot = carte_idf, width = 3, height = 3, units = "in", dpi = 15
 
 ```
 
-
 ```{=latex}
 \begin{textblock*}{4cm}(16cm,1.8cm) % largeur de 6cm, position x=1cm, y=1cm
 \includegraphics[width=4cm]{figures/carte_idf.png}
@@ -148,7 +142,6 @@ texte_coordonnees <- paste0(
   "- \\textbf{Téléphone} : ", str_trim(coordonnees$POSTENQ_TEL), "\n\n",
   "- \\textbf{Email} : ", str_trim(coordonnees$POSTENQ_MAIL), "\n\n",
   "- \\textbf{Adresse} : ", coordonnees$AdresseConsolidee, "\n\n",
-  "- \\textbf{Complément d'adresse} : ", str_to_sentence(coordonnees$ComplementAdresse), "\n\n", 
   "- \\textbf{Département} : ", coordonnees$result_context
 
 )
@@ -241,7 +234,7 @@ cat("
 
 \newpage
 
-```{r}
+```{r, eval = params$full_report}
 
 res <- data.frame(
   Variable = names(BIEF),
@@ -267,7 +260,7 @@ if(!params$missing_values){
 
 ```
 
-```{r, results='asis'}
+```{r, results='asis', eval = params$full_report}
 
 prepare_pack <- function(x,col){
   tmp <- x[[col]] %>% # on ne garde que la colonne qui nous intéresse

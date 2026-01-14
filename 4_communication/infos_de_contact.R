@@ -64,6 +64,29 @@ coordonnees_geo <- coordonnees_geo %>%
     TRUE ~ AdresseConsolidee))
 coordonnees_geo[coordonnees_geo$AdresseConsolidee == "WARN" , ]
 
+coordonnees_geo <- coordonnees_geo %>%
+  mutate(
+    ComplementAdresse = str_trim(ComplementAdresse) %>% str_to_title(),
+    ComplementAdresse = if_else(ComplementAdresse == "", "", str_glue(", {ComplementAdresse}"))) 
+coordonnees_geo <- coordonnees_geo %>%
+  mutate(
+    AdresseConsolidee = str_replace(
+      AdresseConsolidee,
+      "(\\b\\d{5}\\b)",
+      str_glue("{ComplementAdresse} \\1")
+    )) 
+coordonnees_geo <- coordonnees_geo %>%
+  mutate(
+    AdresseSimple = str_sub(
+      AdresseConsolidee,
+      1, str_locate(AdresseConsolidee, "(\\b\\d{5}\\b)")[, 1] - 1) %>% str_trim,
+    CPCommune = str_sub (
+      AdresseConsolidee,
+       str_locate(AdresseConsolidee, "(\\b\\d{5}\\b)")[, 1], -1))
+  
+str_locate(coordonnees_geo$AdresseConsolidee[1], "(\\b\\d{5}\\b)")
+coordonnees_geo$ComplementAdresse
+coordonnees_geo$AdresseSimple
 
 
 
@@ -74,6 +97,11 @@ coordonnees_geo[coordonnees_geo$AdresseConsolidee == "WARN" , ]
 
 freq(infos$sexe)
 tab <- infos[is.na(infos$sexe), ] # Brigitte et Sandra, on peut supposer que ce sont des femmes 
+
+
+## Sandra et Brigitte
+infos[infos$identifiant == "BRIGITTE 1959-06-15", c("sexe", "PRENOM.x", "NOMNAISSANCE")] <-c("Féminin", "Brigitte", "HANSER")
+infos[infos$identifiant == "SANDRA 1972-03-26", c("sexe", "PRENOM.x", "NOMNAISSANCE")] <-c("Féminin", "Sandra", "CREBOIS")
 
 infos <- infos %>%
   # Nom de famille : nom marital + nom de naissance si nécessaire
@@ -88,12 +116,10 @@ infos <- infos %>%
     civilite = case_when(
       sexe == "Féminin"  ~ "Madame",
       sexe == "Masculin" ~ "Monsieur",
-      is.na(sexe) & str_starts(identifiant, "BRIGITTE|SANDRA") ~ "Madame", 
     ),
     parentMF = case_when(
       sexe == "Féminin"  ~ "mère",
       sexe == "Masculin" ~ "père", 
-      is.na(sexe) & str_starts(identifiant, "BRIGITTE|SANDRA") ~ "mère", 
     )
   )
 
@@ -313,10 +339,11 @@ coordonnees_clean <- infos %>%
     nom = NOMFAMILLE, 
     prenom = PRENOM.x, 
     adresse = AdresseConsolidee, 
-    adresse_complement = ComplementAdresse,
+    AdresseSimple, 
+    CPCommune,
     email = POSTENQ_MAIL,
     telephone = POSTENQ_TEL) %>%
-  select(identifiant, civilite, nom, prenom, adresse, adresse_complement, email, telephone)
+  select(identifiant, civilite, nom, prenom, adresse, AdresseSimple, CPCommune, email, telephone)
 
 # Sauvegarde en CSV si besoin
 

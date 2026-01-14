@@ -6,7 +6,7 @@ format:
 params:
   email: "anouk.martin35@univ-paris8.fr"
   phone: 0671793218
-  id_individu: "LAUREEN 1994-10-10"
+  id_individu: "AGNES 1963-07-23"
 ---
 
 ```{r, include = F}
@@ -17,13 +17,13 @@ library(stringr)
 infos <- readRDS(here("1_data/processed/donnees_contact.rds")) %>%
   filter(identifiant == params$id_individu)
 infos$Civilite <- infos$civilite
-infos$Prenom <- infos$PRENOM.x
-infos$Nom <- infos$NOMFAMILLE
+infos$Prenom <- infos$PRENOM.x %>%
+  str_to_title()
+infos$Nom <- infos$NOMFAMILLE %>%
+  str_to_title()
 
 n <- str_locate(infos$AdresseConsolidee, "\\d{5}")[[1, 1]]
-infos$Adresse <- paste0(str_sub(infos$AdresseConsolidee, 1, n-1), 
-                        " \\\\ ", 
-                        str_sub(infos$AdresseConsolidee, n, -1))
+infos$Adresse <- infos$AdresseConsolidee %>% str_trim()
                                 
 infos$Infos_familiales <- infos$description_personalisee
 
@@ -47,7 +47,7 @@ infos$contact <- ifelse(
 
 \vspace{1em}
 
-`r infos$Civilite` `r infos$Nom`,
+`r infos$Civilite` `r infos$Prenom` `r infos$Nom`,
 
 Vous avez participé en début d’année 2025 à une enquête de l’Institut national de la statistique et des études économiques (Insee), associée au recensement de la population, portant sur les familles. Nous vous remercions pour votre contribution à cette opération statistique.
 
@@ -55,22 +55,21 @@ Lors de votre réponse à l’enquête Familles, vous avez accepté d’être `r
 
 Je mène actuelle projet de recherche portant sur la prise en charge matérielle, affective et administrative des enfants. Votre expérience en tant que `r infos$Infos_familiales` constitue un apport particulièrement précieux pour ce travail scientifique. C'est pourquoi je souhaite vous proposer un entretien.
 
-L’entretien sera conduit par moi-même, Mme Anouk Martin, doctorante en sociologie au Centre de recherches sociologiques et politiques de Paris (CRESPPA – CNRS, Université Paris 8). Dans la mesure du possible, l’entretien se déroulera en face à face à votre domicile. Il durera environ 1h30. Avec votre accord préalable, il pourra être enregistré. Je prendrai prochainement contact aux coordonnées renseignées pour l'enquête Familles (`r infos$contact`) avec vous afin de convenir d’un rendez-vous. Vous pouvez également me joindre directement par courriel (`r params$email`) ou par téléphone (`r params$phone`).
+L’entretien sera conduit par moi-même, Mme Anouk Martin, doctorante en sociologie au Centre de recherches sociologiques et politiques de Paris (CRESPPA – CNRS, Université Paris 8). Dans la mesure du possible, l’entretien se déroulera en face à face à votre domicile. Il durera environ 1h30. Avec votre accord préalable, il pourra être enregistré. Je prendrai prochainement contact avec vous aux coordonnées renseignées pour l'enquête Familles (`r infos$contact`) afin de convenir d’un rendez-vous. Vous pouvez également me joindre directement par courriel (`r params$email`) ou par téléphone (`r params$phone`).
 
 Je réalise cet entretien exclusivement à des fins de recherche scientifique, dans le respect du cadre légal en vigueur. Vos réponses seront traitées de manière strictement confidentielle. Elles seront anonymisées et ne seront transmises à aucun tiers. Vous trouverez ci-joint une notice précisant les modalités de l’entretien et les garanties de confidentialité.
 
 Je vous remercie par avance de l’attention portée à cette démarche, et vous prie d’agréer, `r infos$Civilite` `r infos$Nom`, l’expression de ma considération distinguée.
 
-\signature{\includegraphics[width=5cm]{signature_anouk_sans_fond.png} \\ Anouk MARTIN \\ \scriptsize Responsable de l'enquête par entretiens \\ Doctorante au CRESPPA, UMR 7217, Université Paris 8 \\ `r params$email` / `r params$phone` \\ 59-61 rue Pouchet 75849 Paris Cedex 17 \\
-}
-
-\destinataire{%
-`r infos$Civilite` `r infos$Prenom` `r infos$Nom` \\
-`r infos$Adresse` \\
+\signature{\includegraphics[width=5cm]{signature_anouk_sans_fond.png} \\ Anouk MARTIN \\ \scriptsize Responsable du projet de recherche \\ Doctorante au CRESPPA, UMR 7217, CNRS - Université Paris 8 \\ `r params$email` / `r params$phone` \\ 59-61 rue Pouchet 75849 Paris Cedex 17 \\
 }
 
 
+\clearpage
+\thispagestyle{empty}
+\null
 \newpage
+
 
 \begin{NoticeCompacte}
 
@@ -83,7 +82,7 @@ Dans le cadre de l’enquête Familles, réalisée par l’Institut national de 
 
 \textbf{\underline{Déroulement de l’entretien}}
 
-L’entretien est réalisé par un chercheur ou une chercheuse dans le cadre d’un projet de recherche scientifique. Il se déroule en présentiel, en principe au domicile de la personne interrogée, à une date et un horaire convenus au préalable. Si l’entretien ne peut avoir lieu au domicile, un autre lieu pourra être proposé d’un commun accord. La participation à l’entretien est volontaire. La personne interrogée est libre de répondre ou non aux questions posées et peut interrompre l’entretien à tout moment, sans avoir à se justifier. Avec l’accord explicite de la personne interrogée, l’entretien peut faire l’objet d’un enregistrement audio, destiné exclusivement à permettre une retranscription fidèle des échanges.
+L’entretien est réalisé par un chercheur ou une chercheuse dans le cadre d’un projet de recherche scientifique. Il se déroule en présentiel, en principe au domicile de la personne interrogée, à une date et un horaire convenus au préalable. Si l’entretien ne peut avoir lieu au domicile, un autre lieu pourra être proposé d’un commun accord. La participation à l’entretien est volontaire. La personne interrogée est libre de répondre ou non aux questions posées et peut interrompre l’entretien à tout moment. Avec l’accord de la personne interrogée, l’entretien peut faire l’objet d’un enregistrement audio, destiné exclusivement à permettre une retranscription fidèle des échanges.
 
 \underline{Traitement des données et cadre juridique}
 
@@ -106,4 +105,10 @@ Conformément à la réglementation en vigueur, les personnes interrogées dispo
 L’ensemble des informations et garanties décrites dans la présente notice sera rappelé oralement et par écrit au moment de la signature du formulaire de consentement préalable à l’entretien.
 
 \end{NoticeCompacte}
+
+\destinataire{%
+`r infos$Civilite` `r infos$Prenom` `r infos$Nom` \\
+`r infos$AdresseSimple` \\
+`r infos$CPCommune` \\
+}
 
