@@ -8,7 +8,7 @@
 *.ods
 *.odt
 *.docs
-
+*.vcf
 *.eml
 *.pdf
 *.html

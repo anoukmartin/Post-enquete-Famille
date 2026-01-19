@@ -5,7 +5,7 @@ library(quarto)
 library(progress)
 
 # Dossier de sortie
-output_dir <- "3_reporting/individus/synthetiques"
+output_dir <- "3_reporting/individus/html"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Suivi des rendus
@@ -25,7 +25,7 @@ for (id in list_id_individus) {
   
   pb$tick(tokens = list(id = id))
   
-  output_file <- paste0(id, "_fiche_infos.pdf")
+  output_file <- paste0(id, "_fiche_infos.html")
   
   tryCatch({
     

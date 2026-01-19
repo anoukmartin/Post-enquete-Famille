@@ -302,7 +302,7 @@ infos <- infos %>%
     stat, 
     empl,
     STATUT_C,
-   ANAI_C,
+    ANAI_C,
     profession, 
     COUPLE,
     PRENOM_C,
@@ -350,3 +350,88 @@ coordonnees_clean <- infos %>%
 write_csv(coordonnees_clean, "1_data/coordonnees_contact.csv")
 saveRDS(coordonnees_clean, "1_data/coordonnees_contact.rds")
 glimpse(coordonnees_clean)
+
+
+## vCard pour gestion des contacts 
+donnees_contact <- readRDS("1_data/processed/donnees_contact.rds") %>%
+  select(-starts_with("result"))
+
+glimpse(donnees_contact)
+
+contacts_vcard <- donnees_contact %>%
+  transmute(
+    uid = identifiant,
+    prenom = PRENOM.x,
+    nom = as.character(NOMFAMILLE),
+    civilite = civilite,
+    email = na_if(POSTENQ_MAIL, ""),
+    tel = na_if(POSTENQ_TEL, ""),
+    rue = AdresseSimple,
+    cp = CodePostal,
+    ville = Commune,
+    latitude = latitude,
+    longitude = longitude,
+    souspop = souspop,
+    note = glue("{description_personalisee} / {str_to_lower(profession)} chez {rs} ({dipl})"))
+
+
+write_vcard_zimbra <- function(df, file = "contacts_zimbra.vcf") {
+  
+  vcard <- apply(df, 1, function(row) {
+    
+    adr <- paste(
+      "", "",
+      paste0(row["rue"]),
+      row["ville"],
+      "",
+      row["cp"],
+      "France",
+      sep = ";"
+    )
+    
+    c(
+      "BEGIN:VCARD",
+      "VERSION:3.0",
+      
+      paste0("UID:", row["uid"]),
+      paste0(
+        "N:",
+        row["nom"], ";",
+        row["prenom"], ";;",
+        row["civilite"], ";"
+      ),
+      paste0(
+        "FN:",
+        if (!is.na(row["civilite"])) paste0(row["civilite"], " "),
+        row["prenom"], " ",
+        row["nom"]
+      ),
+      
+      if (!is.na(row["tel"]))
+        paste0("TEL;TYPE=CELL:", row["tel"]),
+      
+      if (!is.na(row["email"]))
+        paste0("EMAIL;TYPE=INTERNET:", row["email"]),
+      
+      if (!is.na(row["rue"]))
+        paste0("ADR;TYPE=HOME:", adr),
+      
+      if (!is.na(row["souspop"]))
+        paste0("CATEGORIES:", row["souspop"]),
+      
+      if (!is.na(row["note"]))
+        paste0("NOTE:", row["note"]),
+      
+      if (!is.na(row["latitude"]) & !is.na(row["longitude"]))
+        paste0("GEO:", row["latitude"], ";", row["longitude"]),
+      
+      "END:VCARD",
+      ""
+    )
+  })
+  
+  writeLines(unlist(vcard), file, useBytes = TRUE)
+}
+
+
+write_vcard_zimbra(contacts_vcard, "4_communication/contacts_zimbra.vcf")

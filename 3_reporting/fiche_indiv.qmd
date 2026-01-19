@@ -1,22 +1,22 @@
 ---
 title: ""
 format:
-  pdf:
-    documentclass: article
-    geometry: 
-      - left=1cm
-      - right=1cm
-      - top=1cm
-      - bottom=1cm
-      - heightrounded
-    header-includes: 
-      - \usepackage[absolute,overlay]{textpos}
-  #html: default
+  # pdf:
+  #   documentclass: article
+  #   geometry: 
+  #     - left=1cm
+  #     - right=1cm
+  #     - top=1cm
+  #     - bottom=1cm
+  #     - heightrounded
+  #   header-includes: 
+  #     - \usepackage[absolute,overlay]{textpos}
+  html: default
 editor: visual
 params:
   id_individu: "CAROLINE 1982-12-24"
   missing_values: FALSE
-  full_report: FALSE
+  full_report: TRUE
 editor_options: 
   chunk_output_type: console
 ---

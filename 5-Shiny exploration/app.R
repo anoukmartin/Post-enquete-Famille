@@ -26,7 +26,7 @@ coordonnees <- readRDS("1_data/processed/donnees_contact.rds") %>%
     )
   ) %>%
   mutate(
-    fiche_html_path = paste0("3_reporting/individus_html/", identifiant, "_fiche_infos.html"),
+    fiche_html_path = paste0("3_reporting/individus/html/", identifiant, "_fiche_infos.html"),
     popup = paste0(
       "<div style='width: 340px;'>",
       
@@ -110,13 +110,12 @@ icons_custom <- lapply(1:nrow(coordonnees), function(i) {
 
 
 
-pal <- colorFactor("viridis")
 
-questionnaires <- readRDS("1_data/processed/BIEF.Rds")
+questionnaires <- readRDS("1_data/processed/BIEF.rds")
 
 # -------------------------
 # Charger toutes les fiches HTML dans un data.frame
-fiche_folder <- "3_reporting/individus_html/"
+fiche_folder <- "3_reporting/individus/html/"
 fiche_files <- list.files(fiche_folder, pattern = "_fiche_infos\\.html$", full.names = TRUE)
 
 fiche_data <- lapply(fiche_files, function(f) {
@@ -245,7 +244,7 @@ server <- function(input, output, session) {
   # ----------------- Onglet 4 : Explorateur base de données -----------------
   output$table_db <- renderDT({
     questionnaires
-  }, options = list(pageLength = 10, scrollX = TRUE))
+  }, options = list(pageLength = 10, scrollX = TRUE, searchHighlight = TRUE), filter = 'top')
 }
 
 # -------------------------
