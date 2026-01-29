@@ -118,6 +118,7 @@ ui <- dashboardPage(
         multiple = TRUE,
         options = list(placeholder = "Sélectionner un ou plusieurs tags")
       ),
+      selectInput("facet_var", "Variable de facet", choices = c("souspop", "NULL")),
       
       selectInput(
         "filtre_souspop",
@@ -139,12 +140,15 @@ ui <- dashboardPage(
           valueBoxOutput("sex_ratio")
         ),
         plotOutput("plot_sexe"),
+        h3("Conjugalité"),
         plotOutput("plot_couple"),
         plotOutput("plot_matr"),
+        h3("Enfants"),
+        plotOutput("plot_enfants"),
+        h3("Positions sociales"),
         plotOutput("plot_emploi"),
         plotOutput("plot_diplome"),
-        plotOutput("plot_enfants"),
-        DTOutput("table_synthese")
+        
       ),
       
       tabItem(
@@ -274,12 +278,72 @@ server <- function(input, output, session) {
   })
   glimpse(questionnaires)
   # ----------------- Onglet 1 : stats des ---------------------
+  ## Quelques fonction utiles 
+
   
-  theme_pastel <- theme_minimal(base_size = 14) +
-    theme(legend.position = "top", legend.box = "horizontal")
+  plot_categorique <- function(data, fill_var, facet_var = NULL) {
+    # Transformer les chaînes en symboles pour ggplot
+    fill_sym <- sym(fill_var)
+    
+    # Gérer le facet : NULL si aucun facet
+    facet_sym <- if (!is.null(facet_var) && facet_var != "NULL") sym(facet_var) else NULL
+    
+    p <- data %>%
+      ggplot(aes(x = sexe, fill = !!fill_sym)) +
+      geom_bar(position = "fill") +
+      geom_text(
+        aes(label = after_stat(count)),
+        stat = "count",
+        position = position_fill(vjust = 0.5),
+        color = "white"
+      ) +
+      scale_y_continuous(labels = scales::percent_format()) +
+      labs(
+        title = "Distribution par catégorie",
+        x = NULL,
+        y = "Pourcentage"
+      ) +
+      coord_flip() +
+      scale_fill_brewer(palette = "Set3")+
+      theme_minimal(base_size = 14) +
+      theme(legend.position = "top", legend.box = "horizontal")
+    
+    if (!is.null(facet_sym)) {
+      p <- p + facet_wrap(vars(!!facet_sym))
+    }
+    
+    return(p)
+  }
   
-  scale_fill_default <- scale_fill_brewer(palette = "Set3")
   
+  plot_continu <- function(data, y_var, facet_var = NULL) {
+    # Transformer les chaînes en symboles pour ggplot
+    y_sym <- sym(y_var)
+    
+    # Gérer le facet : NULL si aucun facet
+    facet_sym <- if (!is.null(facet_var) && facet_var != "NULL") sym(facet_var) else NULL
+    
+    p <- data %>%
+      ggplot(aes(x = sexe, fill = sexe, y = !!y_sym)) +
+      geom_boxplot() +
+      # labs( 
+      #   title = "",
+      #   x = NULL,
+      #   y = "Pourcentage"
+      # ) +
+      coord_flip() +
+      scale_fill_brewer(palette = "Set3")+
+      theme_minimal(base_size = 14) +
+      theme(legend.position = "top", legend.box = "horizontal")
+    
+    if (!is.null(facet_sym)) {
+      p <- p + facet_wrap(vars(!!facet_sym), scales = 'free')
+    }
+    
+    return(p)
+  }
+  
+  ## Stats des 
   output$nb_individus <- renderValueBox({
     valueBox(
       value = nrow(coordonnees_filtrées()),
@@ -302,78 +366,41 @@ server <- function(input, output, session) {
       icon = icon("person-dress")
     )
   })
-  # output$plot_sexe <- renderPlot({
-  #   coordonnees_filtrées() %>%
-  #     ggplot(aes(x = souspop, fill = sexe)) +
-  #     geom_bar(position = "fill") +
-  #     scale_y_continuous(labels = scales::percent_format()) +
-  #     labs(
-  #       title = "Sexe",
-  #       x = NULL,
-  #       y = "Pourcentage"
-  #     ) +
-  #     coord_flip() +
-  #     theme_minimal() +
-  #     theme(legend.position = "top", legend.box = "horizontal")
-  #   
-  # })
+  
+  output$plot_sexe <- renderPlot({
+    
+    plot_categorique(
+      data = coordonnees_filtrées(),
+      fill_var = "souspop",
+      facet_var = NULL
+    )
+  })
   output$plot_couple <- renderPlot({
-    coordonnees_filtrées() %>%
-      ggplot(aes(x = sexe, fill = COUPLE)) +
-      geom_bar(position = "fill") +
-      geom_text(
-        aes(label = after_stat(count)),
-        stat = "count",
-        position = position_fill(vjust = 0.5),
-        color = "white"
-      ) +
-      scale_y_continuous(labels = scales::percent_format()) +
-      labs(
-        title = "Situation conjugale",
-        x = NULL,
-        y = "Pourcentage"
-      ) +
-      coord_flip() +
-      scale_fill_pastel + 
-      theme_pastel
+    
+    plot_categorique(
+      data = coordonnees_filtrées(),
+      fill_var = "COUPLE",
+      facet_var = input$facet_var
+    )
   })
+  
   output$plot_matr <- renderPlot({
-    coordonnees_filtrées() %>%
-      aes(
-        x = sexe, 
-        fill = matr, 
-        by = sexe,
-        label = scales::percent(after_stat(prop), accuracy = .1)) +
-      geom_bar(position = "fill") +
-      geom_text(
-        stat = "prop", 
-        position = position_fill(.5)) +
-      scale_y_continuous(labels = scales::percent_format()) +
-      labs(
-        title = "Statut matrimonial",
-        x = NULL,
-        y = "Pourcentage"
-      ) +
-      coord_flip()+
-      facet_wrap(vars(souspop))+
-      theme_minimal() +
-      theme(legend.position = "top", legend.box = "horizontal")
+    
+    plot_categorique(
+      data = coordonnees_filtrées(),
+      fill_var = "matr",
+      facet_var = input$facet_var
+    )
   })
+  
+  
   
   ####
   output$plot_enfants <- renderPlot({
-    coordonnees_filtrées() %>%
-      ggplot(aes(x = souspop, fill = NBENF)) +
-      geom_bar(position = "fill") +
-      scale_y_continuous(labels = scales::percent_format()) +
-      labs(
-        title = "Statut matrimonial",
-        x = NULL,
-        y = "Pourcentage"
-      ) +
-      coord_flip()+
-      theme_minimal() +
-      theme(legend.position = "top", legend.box = "horizontal")
+    
+    plot_continu(data = coordonnees_filtrées(), 
+                 y_var = "NBENF",
+                 facet_var = input$facet_var)
   })
 
 
