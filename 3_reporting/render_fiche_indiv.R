@@ -1,11 +1,21 @@
+# parametres 
+type <- "pdf"
+full <- TRUE
+
+
+# allé
 BIEF <- readRDS(file = "1_data/processed/BIEF.rds")
 list_id_individus <- as.character(BIEF$identifiant)
+
+list_id_individus
 
 library(quarto)
 library(progress)
 
 # Dossier de sortie
-output_dir <- "3_reporting/individus/html"
+if (full){synth <- "complets"} else {synth <- "synthétiques"}
+
+output_dir <- paste0("3_reporting/individus/", type, "_", synth)
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Suivi des rendus
@@ -25,7 +35,7 @@ for (id in list_id_individus) {
   
   pb$tick(tokens = list(id = id))
   
-  output_file <- paste0(id, "_fiche_infos.html")
+  output_file <- paste0(id, "_fiche_infos.", type)
   
   tryCatch({
     
@@ -88,7 +98,7 @@ log_message <- function(message, level = "INFO") {
 # Configuration WebDAV
 config_export <- list(
   base_url = "https://sdrive.cnrs.fr/remote.php/dav/files/1426185",
-  remote_path = "Thèse/Post-enquête/Enquétés/fiches_infos_synthetiques",
+  remote_path = paste0("Thèse/Post-enquête/Enquétés/fiches_infos_", type, "_", synth),
   local_path = output_dir
 )
 
@@ -158,6 +168,8 @@ for (file in files_to_upload) {
 log_message("Export des fichiers terminé avec succès")
 
 
+
+## NON 
 library(pdftools)
 
 pdf_files <- file.path(

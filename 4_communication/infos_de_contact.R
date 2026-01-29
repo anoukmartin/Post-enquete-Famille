@@ -328,7 +328,56 @@ head(infos, 15)
 
 saveRDS(coordonnees_geo,"1_data/processed/coordonnees_geocodes.rds")
 infos <- left_join(coordonnees_geo, infos)
+infos <- infos %>%
+  select(-starts_with("result")) %>%
+  mutate(coordonnes_html = paste0( "<p>",
+                                   "📞 <b>Téléphone :</b> ", POSTENQ_TEL, "<br>",
+                                   "📧 <b>Email :</b> ", POSTENQ_MAIL, "<br>",
+                                   "📍 <b>Adresse :</b> ", AdresseConsolidee,
+                                   "</p>")) %>%
+  mutate(resume_sociodemo_html = paste0("<b>🧍 Individu</b>",
+                                        "<ul>",
+                                        "<li><b>Prénom :</b> ", PRENOM.x, "</li>",
+                                        "<li><b>Nom :</b> ", NOMFAMILLE, "</li>",
+                                        "<li><b>Âge :</b> ", 2026 - anai, "</li>",
+                                        "<li><b>Sexe :</b> ", sexe, "</li>",
+                                        "<li><b>En emploi :</b> ", situat, "</li>",
+                                        "<li><b>Niveau de diplôme :</b> ", dipl, "</li>",
+                                        "<li><b>Statut d'emploi :</b> ", empl, "</li>",
+                                        "<li><b>Temps de travail :</b> ", tp, "</li>",
+                                        "<li><b>Profession :</b> ", str_to_sentence(profession), "</li>",
+                                        "<li><b>Entreprise :</b> ", rs, "</li>",
+                                        "</ul>",
+                                        
+                                        "<b>💍 Situation conjugale</b>",
+                                        "<ul>",
+                                        "<li><b>En couple :</b> ", COUPLE, "</li>",
+                                        "<li><b>Statut matrimonial :</b> ", matr, "</li>",
+                                        "</ul>",
+                                        
+                                        "<b>🧑‍🤝‍🧑 Dernier conjoint</b>",
+                                        "<ul>",
+                                        "<li><b>Prénom :</b> ", PRENOM_C, "</li>",
+                                        "<li><b>Âge :</b> ", 2026 - ANAI_C, "</li>",
+                                        "<li><b>Sexe :</b> ", SEXE_C, "</li>",
+                                        "<li><b>Emploi :</b> ", STATUT_C, "</li>",
+                                        "</ul>",
+                                        
+                                        "<b>👶 Enfants</b>",
+                                        "<ul>",
+                                        "<li><b>Dans le logement :</b> ", enfants_logement, "</li>",
+                                        "<li><b>Résidant ailleurs :</b> ", enfants_ailleurs, "</li>",
+                                        "<li><b>Enfants du conjoint :</b> ", ENFAV_C, "</li>",
+                                        "<li><b>Enfants décédés :</b> ", nb_enfantsDCD, "</li>",
+                                        "</ul>",
+                                        
+                                        "<b>🔁 Synthétique </b>",
+                                        "<ul>",
+                                        "<li><b>Sous-population :</b> ", souspop, "</li>",
+                                        "<li><b>Situation familiale :</b> ", description_personalisee, "</li>",
+                                        "</ul>"))
 saveRDS(infos, "1_data/processed/donnees_contact.rds")
+write_csv(infos, "1_data/donnes_contact.csv")
 glimpse(infos)
 
 # Supposons que ton dataframe s'appelle coordonnees_geo
@@ -353,12 +402,55 @@ glimpse(coordonnees_clean)
 
 
 ## vCard pour gestion des contacts 
-donnees_contact <- readRDS("1_data/processed/donnees_contact.rds") %>%
-  select(-starts_with("result"))
+glimpse(infos)
 
-glimpse(donnees_contact)
+html_to_text_format <- function(x) {
+  if (is.na(x) || x == "") return(NA_character_)
+  
+  # Retours à la ligne / paragraphes
+  x <- gsub("(?i)<br\\s*/?>", "\n", x, perl = TRUE)
+  x <- gsub("(?i)</p>", "\n\n", x, perl = TRUE)
+  x <- gsub("(?i)<p[^>]*>", "", x, perl = TRUE)
+  
+  # Listes
+  x <- gsub("(?i)<ul[^>]*>", "\n", x, perl = TRUE)
+  x <- gsub("(?i)</ul>", "\n", x, perl = TRUE)
+  x <- gsub("(?i)<li[^>]*>", "• ", x, perl = TRUE)
+  x <- gsub("(?i)</li>", "\n", x, perl = TRUE)
+  
+  # Gras / italique → symbolique
+  x <- gsub("(?i)<(strong|b)>", "", x, perl = TRUE)
+  x <- gsub("(?i)</(strong|b)>", "", x, perl = TRUE)
+  x <- gsub("(?i)<(em|i)>", "_", x, perl = TRUE)
+  x <- gsub("(?i)</(em|i)>", "_", x, perl = TRUE)
+  
+  # Liens : garder le texte
+  x <- gsub("(?i)<a[^>]*>", "", x, perl = TRUE)
+  x <- gsub("(?i)</a>", "", x, perl = TRUE)
+  
+  # Supprimer toute autre balise
+  x <- gsub("<[^>]+>", "", x)
+  
+  # Entités HTML
+  x <- gsub("&nbsp;", " ", x)
+  x <- gsub("&amp;", "&", x)
+  x <- gsub("&lt;", "<", x)
+  x <- gsub("&gt;", ">", x)
+  
+  # Nettoyage logique
+  x <- gsub("[ \t]+", " ", x)
+  x <- gsub("\n{3,}", "\n\n", x)
+  x <- trimws(x)
+  
+  # === ÉCHAPPEMENT vCard (POINT CLÉ) ===
+  # Les retours à la ligne doivent être encodés en \n
+  x <- gsub("\r\n|\r|\n", "\\\\n", x)
+  
+  x
+}
 
-contacts_vcard <- donnees_contact %>%
+
+contacts_vcard <- infos %>%
   transmute(
     uid = identifiant,
     prenom = PRENOM.x,
@@ -372,20 +464,26 @@ contacts_vcard <- donnees_contact %>%
     latitude = latitude,
     longitude = longitude,
     souspop = souspop,
-    note = glue("{description_personalisee} / {str_to_lower(profession)} chez {rs} ({dipl})"))
+    note = resume_sociodemo_html)
 
+contacts_vcard$note <- vapply(
+  contacts_vcard$note,
+  html_to_text_format,
+  character(1)
+)
 
-write_vcard_zimbra <- function(df, file = "contacts_zimbra.vcf") {
+write_vcard_google <- function(df, file = "contacts_google.vcf") {
   
   vcard <- apply(df, 1, function(row) {
     
     adr <- paste(
-      "", "",
-      paste0(row["rue"]),
-      row["ville"],
-      "",
-      row["cp"],
-      "France",
+      "",                # PO Box
+      "",                # Extended
+      row["rue"],        # Street
+      row["ville"],      # City
+      "",                # Region
+      row["cp"],         # Postal code
+      "France",          # Country
       sep = ";"
     )
     
@@ -394,24 +492,28 @@ write_vcard_zimbra <- function(df, file = "contacts_zimbra.vcf") {
       "VERSION:3.0",
       
       paste0("UID:", row["uid"]),
+      
       paste0(
         "N:",
         row["nom"], ";",
         row["prenom"], ";;",
-        row["civilite"], ";"
+        ifelse(is.na(row["civilite"]), "", row["civilite"]),
+        ";"
       ),
+      
       paste0(
         "FN:",
-        if (!is.na(row["civilite"])) paste0(row["civilite"], " "),
-        row["prenom"], " ",
-        row["nom"]
+        paste(
+          na.omit(c(row["civilite"], row["prenom"], row["nom"])),
+          collapse = " "
+        )
       ),
       
       if (!is.na(row["tel"]))
         paste0("TEL;TYPE=CELL:", row["tel"]),
       
       if (!is.na(row["email"]))
-        paste0("EMAIL;TYPE=INTERNET:", row["email"]),
+        paste0("EMAIL;TYPE=HOME:", row["email"]),
       
       if (!is.na(row["rue"]))
         paste0("ADR;TYPE=HOME:", adr),
@@ -422,9 +524,6 @@ write_vcard_zimbra <- function(df, file = "contacts_zimbra.vcf") {
       if (!is.na(row["note"]))
         paste0("NOTE:", row["note"]),
       
-      if (!is.na(row["latitude"]) & !is.na(row["longitude"]))
-        paste0("GEO:", row["latitude"], ";", row["longitude"]),
-      
       "END:VCARD",
       ""
     )
@@ -433,5 +532,17 @@ write_vcard_zimbra <- function(df, file = "contacts_zimbra.vcf") {
   writeLines(unlist(vcard), file, useBytes = TRUE)
 }
 
+write_vcard_google(contacts_vcard, file = "4_communication/vCard_Google.vcf")
 
-write_vcard_zimbra(contacts_vcard, "4_communication/contacts_zimbra.vcf")
+glimpse(infos)
+coordonnes_notion <- infos %>%
+  select(Identifiant = identifiant, 
+         Prenom = PRENOM.x, 
+         Nom = NOMFAMILLE, 
+         Civilité = civilite, 
+         Telephone = POSTENQ_TEL, 
+         Mail = POSTENQ_MAIL, 
+         Adresse = AdresseConsolidee, 
+         `Sous-population` = souspop)
+coordonnes_notion[is.na(coordonnes_notion)] <- ""
+write_csv(coordonnes_notion, "1_data/coordonnees_notion.csv")       
