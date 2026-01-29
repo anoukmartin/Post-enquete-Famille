@@ -3,6 +3,11 @@ freq(BIEF$sexe)
 BIEF <- BIEF %>% mutate(sexe = recode(as.character(sexe), "1" = "Masculin", "2" = "Féminin"))
 freq(BIEF$sexe)
 
+## id
+freq(BIEF$id)
+BIEF <- BIEF %>% mutate(id = recode(as.character(id), "1" = "En France (y compris outre-mer)", "2" = "À l'étranger"))
+freq(BIEF$id)
+
 ## iln
 freq(BIEF$iln)
 BIEF <- BIEF %>% mutate(iln = recode(as.character(iln), "1" = "En France (y compris outre-mer)", "2" = "À l'étranger"))
@@ -173,16 +178,6 @@ freq(BIEF$COUPLE)
 BIEF <- BIEF %>% mutate(COUPLE = recode(as.character(COUPLE), "1" = "Oui, avec quelqu'un qui vit avec vous dans ce logement", "2" = "Oui, avec quelqu'un qui vit dans un autre logement", "3" = "Non, mais vous avez déjà été en couple par le passé", "4" = "Non, vous n'avez jamais été en couple"))
 freq(BIEF$COUPLE)
 
-## PACS
-freq(BIEF$PACS)
-BIEF <- BIEF %>% mutate(PACS = recode(as.character(PACS), "1" = "Oui", "2" = "Non"))
-freq(BIEF$PACS)
-
-## MARI
-freq(BIEF$MARI)
-BIEF <- BIEF %>% mutate(MARI = recode(as.character(MARI), "1" = "Oui", "2" = "Non"))
-freq(BIEF$MARI)
-
 ## AUT_UNION
 freq(BIEF$AUT_UNION)
 BIEF <- BIEF %>% mutate(AUT_UNION = recode(as.character(AUT_UNION), "1" = "Oui", "2" = "Non"))
@@ -227,6 +222,471 @@ freq(BIEF$VECU_PLACE)
 freq(BIEF$HEBERG)
 BIEF <- BIEF %>% mutate(HEBERG = recode(as.character(HEBERG), "1" = "Oui", "2" = "Non"))
 freq(BIEF$HEBERG)
+
+## AIDE_APPORT1
+freq(BIEF$AIDE_APPORT1)
+BIEF <- BIEF %>% mutate(AIDE_APPORT1 = recode(as.character(AIDE_APPORT1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$AIDE_APPORT1)
+
+## AIDE_APPORT2
+freq(BIEF$AIDE_APPORT2)
+BIEF <- BIEF %>% mutate(AIDE_APPORT2 = recode(as.character(AIDE_APPORT2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$AIDE_APPORT2)
+
+## AIDE_APPORT3
+freq(BIEF$AIDE_APPORT3)
+BIEF <- BIEF %>% mutate(AIDE_APPORT3 = recode(as.character(AIDE_APPORT3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$AIDE_APPORT3)
+
+## AIDE_APPORT4
+freq(BIEF$AIDE_APPORT4)
+BIEF <- BIEF %>% mutate(AIDE_APPORT4 = recode(as.character(AIDE_APPORT4), "1" = "Oui", "2" = "Non"))
+freq(BIEF$AIDE_APPORT4)
+
+## AIDE_APPORT5
+freq(BIEF$AIDE_APPORT5)
+BIEF <- BIEF %>% mutate(AIDE_APPORT5 = recode(as.character(AIDE_APPORT5), "1" = "Oui", "2" = "Non"))
+freq(BIEF$AIDE_APPORT5)
+
+## QUI_AID_APP_1A1
+freq(BIEF$QUI_AID_APP_1A1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1A1 = recode(as.character(QUI_AID_APP_1A1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1A1)
+
+## QUI_AID_APP_1A2
+freq(BIEF$QUI_AID_APP_1A2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1A2 = recode(as.character(QUI_AID_APP_1A2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1A2)
+
+## QUI_AID_APP_1A3
+freq(BIEF$QUI_AID_APP_1A3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1A3 = recode(as.character(QUI_AID_APP_1A3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1A3)
+
+## QUI_AID_APP_1A4
+freq(BIEF$QUI_AID_APP_1A4)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1A4 = recode(as.character(QUI_AID_APP_1A4), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1A4)
+
+## QUI_AID_APP_1B1
+freq(BIEF$QUI_AID_APP_1B1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1B1 = recode(as.character(QUI_AID_APP_1B1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1B1)
+
+## QUI_AID_APP_1B2
+freq(BIEF$QUI_AID_APP_1B2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1B2 = recode(as.character(QUI_AID_APP_1B2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1B2)
+
+## QUI_AID_APP_1B3
+freq(BIEF$QUI_AID_APP_1B3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1B3 = recode(as.character(QUI_AID_APP_1B3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1B3)
+
+## QUI_AID_APP_1C1
+freq(BIEF$QUI_AID_APP_1C1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1C1 = recode(as.character(QUI_AID_APP_1C1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1C1)
+
+## QUI_AID_APP_1C2
+freq(BIEF$QUI_AID_APP_1C2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1C2 = recode(as.character(QUI_AID_APP_1C2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1C2)
+
+## QUI_AID_APP_1C3
+freq(BIEF$QUI_AID_APP_1C3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1C3 = recode(as.character(QUI_AID_APP_1C3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1C3)
+
+## QUI_AID_APP_1D1
+freq(BIEF$QUI_AID_APP_1D1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1D1 = recode(as.character(QUI_AID_APP_1D1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1D1)
+
+## QUI_AID_APP_1D2
+freq(BIEF$QUI_AID_APP_1D2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_1D2 = recode(as.character(QUI_AID_APP_1D2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_1D2)
+
+## QUI_AID_APP_2A1
+freq(BIEF$QUI_AID_APP_2A1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2A1 = recode(as.character(QUI_AID_APP_2A1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2A1)
+
+## QUI_AID_APP_2A2
+freq(BIEF$QUI_AID_APP_2A2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2A2 = recode(as.character(QUI_AID_APP_2A2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2A2)
+
+## QUI_AID_APP_2A3
+freq(BIEF$QUI_AID_APP_2A3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2A3 = recode(as.character(QUI_AID_APP_2A3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2A3)
+
+## QUI_AID_APP_2A4
+freq(BIEF$QUI_AID_APP_2A4)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2A4 = recode(as.character(QUI_AID_APP_2A4), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2A4)
+
+## QUI_AID_APP_2B1
+freq(BIEF$QUI_AID_APP_2B1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2B1 = recode(as.character(QUI_AID_APP_2B1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2B1)
+
+## QUI_AID_APP_2B2
+freq(BIEF$QUI_AID_APP_2B2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2B2 = recode(as.character(QUI_AID_APP_2B2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2B2)
+
+## QUI_AID_APP_2B3
+freq(BIEF$QUI_AID_APP_2B3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2B3 = recode(as.character(QUI_AID_APP_2B3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2B3)
+
+## QUI_AID_APP_2C1
+freq(BIEF$QUI_AID_APP_2C1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2C1 = recode(as.character(QUI_AID_APP_2C1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2C1)
+
+## QUI_AID_APP_2C2
+freq(BIEF$QUI_AID_APP_2C2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2C2 = recode(as.character(QUI_AID_APP_2C2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2C2)
+
+## QUI_AID_APP_2C3
+freq(BIEF$QUI_AID_APP_2C3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2C3 = recode(as.character(QUI_AID_APP_2C3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2C3)
+
+## QUI_AID_APP_2D1
+freq(BIEF$QUI_AID_APP_2D1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2D1 = recode(as.character(QUI_AID_APP_2D1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2D1)
+
+## QUI_AID_APP_2D2
+freq(BIEF$QUI_AID_APP_2D2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_2D2 = recode(as.character(QUI_AID_APP_2D2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_2D2)
+
+## QUI_AID_APP_3A1
+freq(BIEF$QUI_AID_APP_3A1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3A1 = recode(as.character(QUI_AID_APP_3A1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3A1)
+
+## QUI_AID_APP_3A2
+freq(BIEF$QUI_AID_APP_3A2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3A2 = recode(as.character(QUI_AID_APP_3A2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3A2)
+
+## QUI_AID_APP_3A3
+freq(BIEF$QUI_AID_APP_3A3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3A3 = recode(as.character(QUI_AID_APP_3A3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3A3)
+
+## QUI_AID_APP_3A4
+freq(BIEF$QUI_AID_APP_3A4)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3A4 = recode(as.character(QUI_AID_APP_3A4), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3A4)
+
+## QUI_AID_APP_3B1
+freq(BIEF$QUI_AID_APP_3B1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3B1 = recode(as.character(QUI_AID_APP_3B1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3B1)
+
+## QUI_AID_APP_3B2
+freq(BIEF$QUI_AID_APP_3B2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3B2 = recode(as.character(QUI_AID_APP_3B2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3B2)
+
+## QUI_AID_APP_3B3
+freq(BIEF$QUI_AID_APP_3B3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3B3 = recode(as.character(QUI_AID_APP_3B3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3B3)
+
+## QUI_AID_APP_3C1
+freq(BIEF$QUI_AID_APP_3C1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3C1 = recode(as.character(QUI_AID_APP_3C1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3C1)
+
+## QUI_AID_APP_3C2
+freq(BIEF$QUI_AID_APP_3C2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3C2 = recode(as.character(QUI_AID_APP_3C2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3C2)
+
+## QUI_AID_APP_3C3
+freq(BIEF$QUI_AID_APP_3C3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3C3 = recode(as.character(QUI_AID_APP_3C3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3C3)
+
+## QUI_AID_APP_3D1
+freq(BIEF$QUI_AID_APP_3D1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3D1 = recode(as.character(QUI_AID_APP_3D1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3D1)
+
+## QUI_AID_APP_3D2
+freq(BIEF$QUI_AID_APP_3D2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_3D2 = recode(as.character(QUI_AID_APP_3D2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_3D2)
+
+## QUI_AID_APP_4A1
+freq(BIEF$QUI_AID_APP_4A1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4A1 = recode(as.character(QUI_AID_APP_4A1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4A1)
+
+## QUI_AID_APP_4A2
+freq(BIEF$QUI_AID_APP_4A2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4A2 = recode(as.character(QUI_AID_APP_4A2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4A2)
+
+## QUI_AID_APP_4A3
+freq(BIEF$QUI_AID_APP_4A3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4A3 = recode(as.character(QUI_AID_APP_4A3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4A3)
+
+## QUI_AID_APP_4A4
+freq(BIEF$QUI_AID_APP_4A4)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4A4 = recode(as.character(QUI_AID_APP_4A4), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4A4)
+
+## QUI_AID_APP_4B1
+freq(BIEF$QUI_AID_APP_4B1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4B1 = recode(as.character(QUI_AID_APP_4B1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4B1)
+
+## QUI_AID_APP_4B2
+freq(BIEF$QUI_AID_APP_4B2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4B2 = recode(as.character(QUI_AID_APP_4B2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4B2)
+
+## QUI_AID_APP_4B3
+freq(BIEF$QUI_AID_APP_4B3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4B3 = recode(as.character(QUI_AID_APP_4B3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4B3)
+
+## QUI_AID_APP_4C1
+freq(BIEF$QUI_AID_APP_4C1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4C1 = recode(as.character(QUI_AID_APP_4C1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4C1)
+
+## QUI_AID_APP_4C2
+freq(BIEF$QUI_AID_APP_4C2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4C2 = recode(as.character(QUI_AID_APP_4C2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4C2)
+
+## QUI_AID_APP_4C3
+freq(BIEF$QUI_AID_APP_4C3)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4C3 = recode(as.character(QUI_AID_APP_4C3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4C3)
+
+## QUI_AID_APP_4D1
+freq(BIEF$QUI_AID_APP_4D1)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4D1 = recode(as.character(QUI_AID_APP_4D1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4D1)
+
+## QUI_AID_APP_4D2
+freq(BIEF$QUI_AID_APP_4D2)
+BIEF <- BIEF %>% mutate(QUI_AID_APP_4D2 = recode(as.character(QUI_AID_APP_4D2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_APP_4D2)
+
+## AIDE_RECUE1
+freq(BIEF$AIDE_RECUE1)
+BIEF <- BIEF %>% mutate(AIDE_RECUE1 = recode(as.character(AIDE_RECUE1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$AIDE_RECUE1)
+
+## AIDE_RECUE2
+freq(BIEF$AIDE_RECUE2)
+BIEF <- BIEF %>% mutate(AIDE_RECUE2 = recode(as.character(AIDE_RECUE2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$AIDE_RECUE2)
+
+## AIDE_RECUE3
+freq(BIEF$AIDE_RECUE3)
+BIEF <- BIEF %>% mutate(AIDE_RECUE3 = recode(as.character(AIDE_RECUE3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$AIDE_RECUE3)
+
+## AIDE_RECUE4
+freq(BIEF$AIDE_RECUE4)
+BIEF <- BIEF %>% mutate(AIDE_RECUE4 = recode(as.character(AIDE_RECUE4), "1" = "Oui", "2" = "Non"))
+freq(BIEF$AIDE_RECUE4)
+
+## QUI_AID_REC_1A1
+freq(BIEF$QUI_AID_REC_1A1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1A1 = recode(as.character(QUI_AID_REC_1A1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1A1)
+
+## QUI_AID_REC_1A2
+freq(BIEF$QUI_AID_REC_1A2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1A2 = recode(as.character(QUI_AID_REC_1A2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1A2)
+
+## QUI_AID_REC_1A3
+freq(BIEF$QUI_AID_REC_1A3)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1A3 = recode(as.character(QUI_AID_REC_1A3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1A3)
+
+## QUI_AID_REC_1A4
+freq(BIEF$QUI_AID_REC_1A4)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1A4 = recode(as.character(QUI_AID_REC_1A4), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1A4)
+
+## QUI_AID_REC_1B1
+freq(BIEF$QUI_AID_REC_1B1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1B1 = recode(as.character(QUI_AID_REC_1B1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1B1)
+
+## QUI_AID_REC_1B2
+freq(BIEF$QUI_AID_REC_1B2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1B2 = recode(as.character(QUI_AID_REC_1B2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1B2)
+
+## QUI_AID_REC_1B3
+freq(BIEF$QUI_AID_REC_1B3)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1B3 = recode(as.character(QUI_AID_REC_1B3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1B3)
+
+## QUI_AID_REC_1C1
+freq(BIEF$QUI_AID_REC_1C1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1C1 = recode(as.character(QUI_AID_REC_1C1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1C1)
+
+## QUI_AID_REC_1C2
+freq(BIEF$QUI_AID_REC_1C2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1C2 = recode(as.character(QUI_AID_REC_1C2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1C2)
+
+## QUI_AID_REC_1C3
+freq(BIEF$QUI_AID_REC_1C3)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1C3 = recode(as.character(QUI_AID_REC_1C3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1C3)
+
+## QUI_AID_REC_1D1
+freq(BIEF$QUI_AID_REC_1D1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1D1 = recode(as.character(QUI_AID_REC_1D1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1D1)
+
+## QUI_AID_REC_1D2
+freq(BIEF$QUI_AID_REC_1D2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_1D2 = recode(as.character(QUI_AID_REC_1D2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_1D2)
+
+## QUI_AID_REC_2A1
+freq(BIEF$QUI_AID_REC_2A1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2A1 = recode(as.character(QUI_AID_REC_2A1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2A1)
+
+## QUI_AID_REC_2A2
+freq(BIEF$QUI_AID_REC_2A2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2A2 = recode(as.character(QUI_AID_REC_2A2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2A2)
+
+## QUI_AID_REC_2A3
+freq(BIEF$QUI_AID_REC_2A3)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2A3 = recode(as.character(QUI_AID_REC_2A3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2A3)
+
+## QUI_AID_REC_2A4
+freq(BIEF$QUI_AID_REC_2A4)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2A4 = recode(as.character(QUI_AID_REC_2A4), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2A4)
+
+## QUI_AID_REC_2B1
+freq(BIEF$QUI_AID_REC_2B1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2B1 = recode(as.character(QUI_AID_REC_2B1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2B1)
+
+## QUI_AID_REC_2B2
+freq(BIEF$QUI_AID_REC_2B2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2B2 = recode(as.character(QUI_AID_REC_2B2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2B2)
+
+## QUI_AID_REC_2B3
+freq(BIEF$QUI_AID_REC_2B3)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2B3 = recode(as.character(QUI_AID_REC_2B3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2B3)
+
+## QUI_AID_REC_2C1
+freq(BIEF$QUI_AID_REC_2C1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2C1 = recode(as.character(QUI_AID_REC_2C1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2C1)
+
+## QUI_AID_REC_2C2
+freq(BIEF$QUI_AID_REC_2C2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2C2 = recode(as.character(QUI_AID_REC_2C2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2C2)
+
+## QUI_AID_REC_2C3
+freq(BIEF$QUI_AID_REC_2C3)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2C3 = recode(as.character(QUI_AID_REC_2C3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2C3)
+
+## QUI_AID_REC_2D1
+freq(BIEF$QUI_AID_REC_2D1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2D1 = recode(as.character(QUI_AID_REC_2D1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2D1)
+
+## QUI_AID_REC_2D2
+freq(BIEF$QUI_AID_REC_2D2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_2D2 = recode(as.character(QUI_AID_REC_2D2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_2D2)
+
+## QUI_AID_REC_3A1
+freq(BIEF$QUI_AID_REC_3A1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3A1 = recode(as.character(QUI_AID_REC_3A1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3A1)
+
+## QUI_AID_REC_3A2
+freq(BIEF$QUI_AID_REC_3A2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3A2 = recode(as.character(QUI_AID_REC_3A2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3A2)
+
+## QUI_AID_REC_3A3
+freq(BIEF$QUI_AID_REC_3A3)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3A3 = recode(as.character(QUI_AID_REC_3A3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3A3)
+
+## QUI_AID_REC_3A4
+freq(BIEF$QUI_AID_REC_3A4)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3A4 = recode(as.character(QUI_AID_REC_3A4), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3A4)
+
+## QUI_AID_REC_3B1
+freq(BIEF$QUI_AID_REC_3B1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3B1 = recode(as.character(QUI_AID_REC_3B1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3B1)
+
+## QUI_AID_REC_3B2
+freq(BIEF$QUI_AID_REC_3B2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3B2 = recode(as.character(QUI_AID_REC_3B2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3B2)
+
+## QUI_AID_REC_3B3
+freq(BIEF$QUI_AID_REC_3B3)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3B3 = recode(as.character(QUI_AID_REC_3B3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3B3)
+
+## QUI_AID_REC_3C1
+freq(BIEF$QUI_AID_REC_3C1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3C1 = recode(as.character(QUI_AID_REC_3C1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3C1)
+
+## QUI_AID_REC_3C2
+freq(BIEF$QUI_AID_REC_3C2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3C2 = recode(as.character(QUI_AID_REC_3C2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3C2)
+
+## QUI_AID_REC_3C3
+freq(BIEF$QUI_AID_REC_3C3)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3C3 = recode(as.character(QUI_AID_REC_3C3), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3C3)
+
+## QUI_AID_REC_3D1
+freq(BIEF$QUI_AID_REC_3D1)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3D1 = recode(as.character(QUI_AID_REC_3D1), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3D1)
+
+## QUI_AID_REC_3D2
+freq(BIEF$QUI_AID_REC_3D2)
+BIEF <- BIEF %>% mutate(QUI_AID_REC_3D2 = recode(as.character(QUI_AID_REC_3D2), "1" = "Oui", "2" = "Non"))
+freq(BIEF$QUI_AID_REC_3D2)
 
 ## LANGUE2_ENFE
 freq(BIEF$LANGUE2_ENFE)
@@ -273,6 +733,16 @@ freq(BIEF$STATUT_C)
 BIEF <- BIEF %>% mutate(STATUT_C = recode(as.character(STATUT_C), "1" = "A son compte (y compris gérant(e) de société salarié(e))", "2" = "Salarié(e) de la fonction publique (Etat, territoriale, hospitalière)", "3" = "Salarié(e) d'une entreprise (y compris d'une association ou de la sécurité sociale)", "4" = "Salarié(e) d'un particulier", "5" = "Aide familial(e) non rémunéré(e)"))
 freq(BIEF$STATUT_C)
 
+## PACS
+freq(BIEF$PACS)
+BIEF <- BIEF %>% mutate(PACS = recode(as.character(PACS), "1" = "Oui", "2" = "Non"))
+freq(BIEF$PACS)
+
+## MARI
+freq(BIEF$MARI)
+BIEF <- BIEF %>% mutate(MARI = recode(as.character(MARI), "1" = "Oui", "2" = "Non"))
+freq(BIEF$MARI)
+
 ## ENFAV_C
 freq(BIEF$ENFAV_C)
 BIEF <- BIEF %>% mutate(ENFAV_C = recode(as.character(ENFAV_C), "1" = "Oui", "2" = "Non"))
@@ -303,6 +773,11 @@ freq(BIEF$ENF21_AUTPAR_C4)
 BIEF <- BIEF %>% mutate(ENF21_AUTPAR_C4 = recode(as.character(ENF21_AUTPAR_C4), "NA" = "Non - Non"))
 freq(BIEF$ENF21_AUTPAR_C4)
 
+## SEXE_U1
+freq(BIEF$SEXE_U1)
+BIEF <- BIEF %>% mutate(SEXE_U1 = recode(as.character(SEXE_U1), "1" = "Un homme", "2" = "Une femme"))
+freq(BIEF$SEXE_U1)
+
 ## PACS_U1
 freq(BIEF$PACS_U1)
 BIEF <- BIEF %>% mutate(PACS_U1 = recode(as.character(PACS_U1), "1" = "Oui", "2" = "Non"))
@@ -327,6 +802,11 @@ freq(BIEF$ENFAV_C_U1)
 freq(BIEF$NBENFAV_C1_VENU_U1)
 BIEF <- BIEF %>% mutate(NBENFAV_C1_VENU_U1 = recode(as.character(NBENFAV_C1_VENU_U1), "1" = "Oui", "2" = "Non"))
 freq(BIEF$NBENFAV_C1_VENU_U1)
+
+## SEXE_U2
+freq(BIEF$SEXE_U2)
+BIEF <- BIEF %>% mutate(SEXE_U2 = recode(as.character(SEXE_U2), "1" = "Un homme", "2" = "Une femme"))
+freq(BIEF$SEXE_U2)
 
 ## PACS_U2
 freq(BIEF$PACS_U2)

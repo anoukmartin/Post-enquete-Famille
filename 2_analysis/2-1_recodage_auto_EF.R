@@ -9,9 +9,7 @@ library(glue)
 library(dplyr)
 library(purrr)
 library(stringr)
-library(fuzzyjoin)
-library(questionr
-        )
+library(questionr)
 source("fonctions/match_vars.R")
 # -----------------------------------------------------------------------
 # 1. Charger les données
@@ -86,17 +84,104 @@ rm(gender_var)
 EF$ADOPT_ENFLOG1
 # On ajoute des variables qui manque 
 head(vars_EF)
-EF$QUI_AID_RE
+
+
+temp <- vars_EF[vars_EF$Variable == "AIDE_APPORT", ]
+temp$Question <- temp$Question %>%
+  str_replace("\\(", "?") %>%
+  str_sub(1, 173) 
+temp <- temp[rep(1, 5), ]
+temp$Variable <- paste0(temp$Variable, 1:5)
+temp$Question <- paste(temp$Question, c("Oui, une aide pour les tâches quotidiennes", 
+                                         "Oui, une aide financière ou matérielle", 
+                                         "Oui, un soutien moral",
+                                         "Oui, vous êtes tuteur / tutrice ou curateur/curatrice",
+                                         "Non, aucune aide de ce type"))
+temp$Modalites <- "1 - Oui | 2 - Non"
+
+vars_EF <- bind_rows(vars_EF %>%
+                       filter(Variable != "AIDE_APPORT"), 
+                     temp)
+
+temp$Variable <- paste0("QUI_AID_APP_", 1:5)
+temp <- temp[-5, ]
+temp$Question <- temp$Question %>%
+  str_sub( 175, -1)
+temp$Question <- paste0("A qui ? ", temp$Question)
+temp <- temp[rep(1:4, 5+4+4+3), ]
+temp <- temp %>% arrange(Variable)
+temp$Variable <- paste0(temp$Variable, rep(c(rep("A", 5), rep("B", 4), rep("C", 4), rep("D", 3)), 4))
+temp$Variable <- paste0(temp$Variable, rep(c(1:4, "D", 1:3, "D", 1:3, "D", 1:2, "D"), 4))
+temp <- temp %>%
+  mutate(Question = case_when(
+    str_ends(Variable, "1") ~ str_glue("{Question} Vos parents/votre parent"), 
+    str_ends(Variable, "D") ~ str_glue("{Question} Autre : en clair"), 
+    str_ends(Variable, "A2|B2") ~ str_glue("{Question} Votre conjoint-e"), 
+    str_ends(Variable, "A3|C2") ~ str_glue("{Question} Votre/vos enfant(s)"), 
+    str_ends(Variable, "A4|B3|C3|D2") ~ str_glue("{Question} Un autre membre de votre famille")
+  ))
+
+temp <- temp %>%
+  mutate(Modalites = if_else(
+    str_ends(Variable, "D"), NA, Modalites))
+
+vars_EF <- bind_rows(vars_EF, temp)
+
+
+## AIde recue 
+
+temp <- vars_EF[vars_EF$Variable == "AIDE_RECUE", ]
+temp$Question <- temp$Question %>%
+  str_replace("\\(", "?") %>%
+  str_sub(1, 204) 
+EF$AIDE_RE
+temp <- temp[rep(1, 4), ]
+temp$Variable <- paste0(temp$Variable, 1:4)
+
+temp$Question <- paste(temp$Question, c("Oui, une aide pour les tâches quotidiennes", 
+                                        "Oui, une aide financière ou matérielle", 
+                                        "Oui, un soutien moral",
+                                        "Non, aucune aide de ce type"))
+temp$Modalites <- "1 - Oui | 2 - Non"
+
+vars_EF <- bind_rows(vars_EF %>%
+                       filter(Variable != "AIDE_RECUE"), 
+                     temp)
+
+temp$Variable <- paste0("QUI_AID_REC_", 1:4)
+temp <- temp[-4, ]
+temp$Question <- temp$Question %>%
+  str_sub( 206, -1)
+temp$Question <- paste0("De qui ? ", temp$Question)
+temp <- temp[rep(1:3, 5+4+4+3), ]
+temp <- temp %>% arrange(Variable)
+temp$Variable <- paste0(temp$Variable, rep(c(rep("A", 5), rep("B", 4), rep("C", 4), rep("D", 3)), 3))
+temp$Variable <- paste0(temp$Variable, rep(c(1:4, "D", 1:3, "D", 1:3, "D", 1:2, "D"), 3))
+temp <- temp %>%
+  mutate(Question = case_when(
+    str_ends(Variable, "1") ~ str_glue("{Question} Vos parents/votre parent"), 
+    str_ends(Variable, "D") ~ str_glue("{Question} Autre : en clair"), 
+    str_ends(Variable, "A2|B2") ~ str_glue("{Question} Votre conjoint-e"), 
+    str_ends(Variable, "A3|C2") ~ str_glue("{Question} Votre/vos enfant(s)"), 
+    str_ends(Variable, "A4|B3|C3|D2") ~ str_glue("{Question} Un autre membre de votre famille")
+  ))
+
+temp <- temp %>%
+  mutate(Modalites = if_else(
+    str_ends(Variable, "D"), NA, Modalites))
+
+vars_EF <- bind_rows(vars_EF, temp)
+
+
 vars_EF <- bind_rows(vars_EF, 
-                 data.frame(Variable = c("AG_ENFLOG1", 
+     data.frame(Variable = c("AG_ENFLOG1", 
                                          "AG_ENFAIL1", 
                                          "ADOPT_ENFLOG1", 
                                          "ADOPT_ENFAIL1", 
                                          "ANADOPT_ENFLOG1", 
                                          "ANADOPT_ENFAIL1", 
-                                         "PNAI_PAR1", 
-                                         "QUI_AID_APP_1", 
-                                         "QUI_AID_REC_1"), 
+                                         "PNAI_PAR1",
+                                         "TYP_PLACE1"), 
                             Question = c("Age de l'enfant vivant dans le logement",
                                          "Age de l'enfant vivant ailleur", 
                                          "Adoption de l'enfant vivant dans le logement",
@@ -104,11 +189,11 @@ vars_EF <- bind_rows(vars_EF,
                                          "Année de l'adoption de l'enfant vivant dans le logement", 
                                          "Année de l'adoption de l'enfant vivant ailleur", 
                                          "Pays de naissance du parent", 
-                                         "Aide apportée à qui ?", 
-                                         "Aide reçue de la part  de qui ?"),
-                            Modalites = c(NA, NA, rep("1 - Oui | 2 - Non", 2), NA, NA, NA, NA, NA),
+                                         "Type de placement"),
+                            Modalites = c(NA, NA, rep("1 - Oui | 2 - Non", 2), NA, NA, NA, NA),
                             Type = c("Quantitative", "Quantitative", "Qualitative", "Qualitative", 
-                                     "Quantitative", "Quantitative", "Qualitative",  "Qualitative",  "Qualitative")))
+                                     "Quantitative", "Quantitative", "Qualitative",  "Qualitative" 
+                                     )))
 
 
 head(vars_BI)
@@ -137,16 +222,25 @@ anomalie1 <- names(BIEF)[!(names(BIEF) %in% vars_all$Variable)]
 anomalie2 <- vars_all$Variable[!(vars_all$Variable %in% names(BIEF))]
  
 
-
 # Trouver les correspondances
-correspondances <- trouver_correspondances(names(BIEF), vars_all$Variable, seuil_similarite = 0.6)
+correspondances <- trouver_correspondances(names(BIEF), vars_all$Variable, seuil_similarite = -10)
+
+# test 
+names(BIEF)[!(names(BIEF) %in% correspondances$Variable.x)]
 
 # Afficher les résultats
 print(correspondances)
+
+glimpse(correspondances)
+
 correspondances <- correspondances %>%
-  #filter(lv_similarity <=2)%>%
+  group_by(Variable.x) %>%
+  slice_max(composite_score, n = 1, with_ties = FALSE) %>%
+  ungroup()
+  
+correspondances <- correspondances %>%
   mutate(Variable.y = case_when(
-    jw_similarity >= 0.121 ~ NA, 
+    composite_score <= 0.02 ~ NA, 
     TRUE ~ Variable.y
   )) %>%
   select(Variable.x, Variable.y) %>%
@@ -196,7 +290,7 @@ vars_all2 <- vars_all2 %>%
   bind_rows(orph)
 
 vars_all2 <- vars_all2 %>%
-mutate(
+  mutate(
   Qui = case_when(
     !is.na(Qui) ~ Qui,
     
@@ -219,7 +313,7 @@ mutate(
     str_detect(Variable, "PAR2") ~ 
       glue("Parent n°2"),
     
-    str_ends(Variable, "_C|_C[0-9]|_U|CJT|CONJ|CJ") ~ 
+    str_ends(Variable, "_C|_C[0-9]|_U|CJT|CONJ|CJ|MARI|PACS") ~ 
       glue("Conjoint-e actuel/Dernier-e conjoint-e"),
     
     str_ends(Variable, "_U1") ~ 
@@ -247,7 +341,7 @@ vars_all2 <- vars_all2 %>%
       Qui == "ego" & str_detect(Variable, "AID_|AIDE_") ~ "Aides",
       Qui == "ego" & str_detect(Variable, "VECU|DEP_PARENT|HEBERG") ~ "Jeunesse", 
       Qui == "ego" & str_detect(Variable, "ENF") ~ "Parentalité",
-      Qui == "ego" & str_detect(Variable, "COUPLE|MARI|PACS|AUT_UN") ~ "Conjugalité",
+      Qui == "ego" & str_detect(Variable, "COUPLE|AUT_UN") ~ "Conjugalité",
       Qui == "ego" & str_detect(Variable, "TRAV|EMP") ~ "Travail", 
       Qui == "ego" & str_detect(Variable, "ETU") ~ "Etudes",
       Qui == "ego" & str_detect(Variable, "POSTENQ") ~ "Post-enquête",
@@ -271,7 +365,7 @@ vars_all2$Qui <- vars_all2$Qui %>% fct_relevel(
     "Enfant ailleur n°1", "Enfant ailleur n°2", "Enfant ailleur n°3",
     "Enfant ailleur n°4", "Enfant ailleur n°5", "Enfant ailleur n°6",
     "Enfant ailleur n°7", "Enfant ailleur n°8", 
-    "parent1", "parent2", "Parent n°1", "Parent n°2", "Parent n°3", "Parent n°NA",
+    "parent1", "parent2", "Parent n°1", "Parent n°2", 
     "Frère(s) et soeur(s)", "Petit(s) enfant(s)"
   )
 vars_all2$Theme[is.na(vars_all2$Theme)] <- "Autre"
@@ -342,7 +436,7 @@ cat(recode_code[1:20], sep = "\n\n\n")
 writeLines(recode_code, "2_analysis/2-2_recode_BIEF_2025.R")
 
 # Tu pourras ensuite exécuter ce fichier dans RStudio :
-source("2_analysis/2-2_recode_BIEF_2025.R")
+source("2_analysis/2-2_recode_BIEF_2025.R", verbose = T)
 # -----------------------------------------------------------------------
 
 # Après exécution, toutes les variables codées numériquement auront des libellés texte
