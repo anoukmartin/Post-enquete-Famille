@@ -1,57 +1,81 @@
-coordonnees$Commune
 
 library(dplyr)
 library(stringr)
 library(sf)
 library(ggplot2)
 library(geodata)
+library(ggrepel)
 
-# ---- 1. Extraction du code INSEE ----
-data <- coordonnees %>%
-  mutate(code_insee = str_extract(Commune, "\\d{5}"))
 
-# ---- 2. Comptage par commune ----
-ville_counts <- data %>%
-  group_by(code_insee) %>%
-  summarise(n = n())
+library(sf)
+library(ggplot2)
+library(maps)
 
-# ---- 3. Charger les communes de France ----
-# gadm level=3 = communes
 
-# URL officielle des contours des communes (mise à jour 2025)
-url <- "https://static.data.gouv.fr/resources/contours-des-communes/20250401-communes-france.geojson"
 
-# Téléchargement dans un dossier temporaire
-destfile <- tempfile(fileext = ".geojson")
-download.file(url, destfile, mode = "wb")
+# URL du shapefile ZIP officiel
+url <- "https://data.iledefrance.fr/api/explore/v2.1/catalog/datasets/communes-france/exports/shp?lang=fr&timezone=Europe%2FBerlin&use_labels=true"
 
-head(coordonnees)
+# Chemin temporaire pour télécharger le zip
+temp <- tempfile(fileext = ".zip")
+download.file(url, temp)
 
-fr_com <- gadm(country = "FRA", level = 4, path = tempdir()) 
-class(fr_com)
-fr_com <- st_as_sf(fr_com) 
-dep_com <- fr_com %>%
-  filter(NAME_2 %in% c("Essonne", "Val-de-Marne"))
-plot(dep_com)
-unique(fr_com$NAME_2)
-# Vérifie la structure pour trouver la colonne du code INSEE
-# (selon la source, ça peut être "CC_1", "NL_NAME_3", etc.)
-names(fr_com)
-head(fr_com)
+# Décompresser le zip dans un dossier temporaire
+unzip_dir <- tempdir()
+unzip(temp, exdir = unzip_dir)
 
-# ---- 4. Joindre tes données ----
-# Adapte "INSEE_CODE" à la bonne colonne du shapefile
-dep_data <- fr_com %>%
-  left_join(ville_counts, by = c("INSEE_CODE" = "code_insee"))
+# Trouver le fichier .shp dans le dossier décompressé
+shp_file <- list.files(unzip_dir, pattern = "\\.shp$", full.names = TRUE)
 
-# ---- 5. Filtrer sur Val-de-Marne (94) et Essonne (91) ----
-dep_data <- dep_data %>%
-  filter(substr(INSEE_CODE, 1, 2) %in% c("91", "94"))
+# Lire le shapefile
+idf_sf <- st_read(shp_file[1])
 
-# ---- 6. Carte ----
-ggplot(dep_data) +
-  geom_sf(aes(fill = n), color = "white") +
-  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
-  labs(title = "Nombre d'enquêtés par commune",
-       fill = "Enquêtés") +
-  theme_minimal()
+# Visualiser
+carte_idf <- ggplot(idf_sf) +
+  geom_sf(data = idf_sf, fill = "grey95", color = "grey60") +
+  coord_sf(expand = FALSE) +
+  theme_void()
+
+carte_idf
+unique(coordonnees$Commune)
+communes_counts <- coordonnees %>%
+  mutate(Commune = if_else(str_starts(Commune, "PARIS"), "PARIS", Commune)) %>%
+  group_by(Commune, sexe) %>%  # ou code_postal si tu utilises les codes postaux
+  summarise(nb_individus = n())
+
+
+
+idf_sf_counts <- idf_sf %>%
+  left_join(communes_counts, by = c("Nom_Officie.8" = "Commune")) %>%
+  filter(!is.na(nb_individus))
+
+centres <- st_centroid(idf_sf_counts)
+coords <- st_coordinates(centres)
+centres <- centres %>%
+  mutate(
+    X = coords[, 1],
+    Y = coords[, 2]
+  )
+
+ggplot() +
+  geom_sf(data = idf_sf, fill = "grey95", color = "grey60") +  # fond des communes
+  geom_sf(data = centres, aes(size = nb_individus, color = sexe ), alpha = 0.7) +
+  geom_text_repel(
+    data = centres,
+    aes(x = X, y = Y, label = paste0(str_to_title(Nom_Officie.8), " [", nb_individus, "]")),
+    size = 2.5,
+    max.overlaps = Inf,
+    box.padding = 0.3,
+    point.padding = 0.2,
+    min.segment.length = 0
+  ) +
+  scale_size_continuous(
+    range = c(1, 15),
+    name = "Nombre d'individus\n dans l'échantillon"
+  ) +
+  scale_color_discrete(
+    name = "Sexe des individus\nenquêtés dans\nla commune"
+  ) +
+  coord_sf(expand = FALSE) +
+  theme_void()
+

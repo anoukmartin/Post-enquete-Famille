@@ -3,11 +3,15 @@
 library(shiny)
 library(leaflet)
 library(dplyr)
+library(tidyverse)
 library(DT)
 library(stringr)
 library(shinythemes)
 library(shinydashboard)
 library(here)
+library(webshot2)
+library(shinyjs)
+
 
 # -------------------------
 # Chargement des données
@@ -16,7 +20,7 @@ library(here)
 
 coordonnees <- readRDS(here("1_data/processed/donnees_contact.rds")) %>%
   mutate(
-    fiche_html_path = paste0("3_reporting/individus/html/", identifiant, "_fiche_infos.html"),
+    fiche_html_path = paste0("3_reporting/individus/html_complets/", identifiant, "_fiche_infos.html"),
     popup = paste0(
       "<div style='width: 600px;'>",
       
@@ -43,7 +47,7 @@ coordonnees <- readRDS(here("1_data/processed/donnees_contact.rds")) %>%
   )
 
 
-42
+
 
 favoris_path <- here("1_data/processed/favoris.rds")
 
@@ -79,7 +83,7 @@ questionnaires <- readRDS(here("1_data/processed/BIEF.rds")) %>%
 
 # -------------------------
 # Charger toutes les fiches HTML dans un data.frame
-fiche_folder <- here("3_reporting/individus/html/")
+fiche_folder <- here("3_reporting/individus/html_complets/")
 fiche_files <- list.files(fiche_folder, pattern = "_fiche_infos\\.html$", full.names = TRUE)
 
 fiche_data <- lapply(fiche_files, function(f) {
@@ -134,20 +138,31 @@ ui <- dashboardPage(
       
       tabItem(
         tabName = "stats",
+        
         fluidRow(
-          valueBoxOutput("nb_individus"),
-          valueBoxOutput("age_moyen"), 
-          valueBoxOutput("sex_ratio")
+          valueBoxOutput("nb_individus", width = 4),
+          valueBoxOutput("age_moyen", width = 2), 
+          valueBoxOutput("sex_ratio", width = 2), 
+          valueBoxOutput("nenfants", width = 2), 
+          valueBoxOutput("dipl_ratio", width = 2)
         ),
         plotOutput("plot_sexe"),
+        plotOutput("plot_age"),
         h3("Conjugalité"),
         plotOutput("plot_couple"),
         plotOutput("plot_matr"),
+        plotOutput("plot_ecartage"),
         h3("Enfants"),
         plotOutput("plot_enfants"),
+        plotOutput("plot_enfants_aill"),
+        plotOutput("plot_enfants_c"),
         h3("Positions sociales"),
-        plotOutput("plot_emploi"),
+        
         plotOutput("plot_diplome"),
+        plotOutput("plot_emploi"),
+        plotOutput("plot_statut"),
+        plotOutput("plot_contrat"),
+        plotOutput("plot_tp"),
         
       ),
       
@@ -200,6 +215,7 @@ server <- function(input, output, session) {
     favoris(f)
     saveRDS(f, favoris_path)
   }
+  
   ids_filtrés <- reactive({
     txt <- str_squish(str_to_lower(input$search_text))
     
@@ -276,12 +292,12 @@ server <- function(input, output, session) {
   questionnaires_filtrés <- reactive({
     questionnaires %>% filter(identifiant %in% ids_filtrés())
   })
-  glimpse(questionnaires)
+  
   # ----------------- Onglet 1 : stats des ---------------------
   ## Quelques fonction utiles 
 
   
-  plot_categorique <- function(data, fill_var, facet_var = NULL) {
+  plot_categorique <- function(data, fill_var, facet_var = NULL, titre = "") {
     # Transformer les chaînes en symboles pour ggplot
     fill_sym <- sym(fill_var)
     
@@ -295,11 +311,11 @@ server <- function(input, output, session) {
         aes(label = after_stat(count)),
         stat = "count",
         position = position_fill(vjust = 0.5),
-        color = "white"
+        color = "black"
       ) +
       scale_y_continuous(labels = scales::percent_format()) +
       labs(
-        title = "Distribution par catégorie",
+        title = titre,
         x = NULL,
         y = "Pourcentage"
       ) +
@@ -324,20 +340,20 @@ server <- function(input, output, session) {
     facet_sym <- if (!is.null(facet_var) && facet_var != "NULL") sym(facet_var) else NULL
     
     p <- data %>%
-      ggplot(aes(x = sexe, fill = sexe, y = !!y_sym)) +
-      geom_boxplot() +
+      ggplot(aes(fill = sexe, x = !!y_sym)) +
+      geom_histogram() +
       # labs( 
       #   title = "",
       #   x = NULL,
       #   y = "Pourcentage"
       # ) +
-      coord_flip() +
+      #coord_flip() +
       scale_fill_brewer(palette = "Set3")+
       theme_minimal(base_size = 14) +
       theme(legend.position = "top", legend.box = "horizontal")
     
     if (!is.null(facet_sym)) {
-      p <- p + facet_wrap(vars(!!facet_sym), scales = 'free')
+      p <- p + facet_wrap(vars(!!facet_sym, sexe), scales = 'free')
     }
     
     return(p)
@@ -348,7 +364,8 @@ server <- function(input, output, session) {
     valueBox(
       value = nrow(coordonnees_filtrées()),
       subtitle = "Individus",
-      icon = icon("users")
+      icon = icon("users"), 
+      color = "olive"
     )
   })
   
@@ -356,14 +373,35 @@ server <- function(input, output, session) {
     valueBox(
       value = round(mean(2025 - coordonnees_filtrées()$anai, na.rm = TRUE), 1),
       subtitle = "Âge moyen",
-      icon = icon("birthday-cake")
+      icon = icon("birthday-cake"), 
+      color = "olive"
     )
   })
   output$sex_ratio <- renderValueBox({
     valueBox(
       value = paste0(round(100*nrow(coordonnees_filtrées() %>% filter(sexe == "Féminin")) / nrow(coordonnees_filtrées()), 1), "%"),
       subtitle = "Sexe-ratio",
-      icon = icon("person-dress")
+      icon = icon("person-dress"), 
+      color = "olive"
+    )
+  })
+  output$nenfants <- renderValueBox({
+    valueBox(
+      value = round(mean(coordonnees_filtrées()$NBENF, na.rm = TRUE), 1),
+      subtitle = "Nombre d'enfants",
+      icon = icon("baby"), 
+      color = "olive"
+    )
+  })
+  output$dipl_ratio <- renderValueBox({
+    valueBox(
+      value = paste0(round(100*nrow(coordonnees_filtrées() %>% 
+                                      filter(dipl %in% c("Aucun diplôme",
+                                                         "BEPC, brevet élémentaire, brevet des collèges, DNB",
+                                                         "CAP, BEP ou diplôme de niveau équivalent"))) / nrow(coordonnees_filtrées()), 1), "%"),
+      subtitle = "Faibles diplômes (>Bac)",
+      icon = icon("graduation-cap"), 
+      color = "olive"
     )
   })
   
@@ -372,15 +410,47 @@ server <- function(input, output, session) {
     plot_categorique(
       data = coordonnees_filtrées(),
       fill_var = "souspop",
-      facet_var = NULL
+      facet_var = NULL, 
+      titre = "Configuration familiale d'égo"
     )
   })
+  
+  output$plot_age <- renderPlot({
+    
+    
+    # Gérer le facet : NULL si aucun facet
+    facet_var <- input$facet_var
+    facet_sym <- if (!is.null(facet_var) && facet_var != "NULL") sym(facet_var) else NULL
+    
+    p <- coordonnees_filtrées() %>%
+      mutate(age = 2025 - anai) %>%
+      ggplot(aes(x = sexe, y = age, fill = !!facet_sym)) +
+      geom_boxplot(outlier.alpha = 0.4) +
+      labs(
+        title = "Age d'égo",
+        x = NULL,
+        y = "Âge",
+      ) +
+      coord_flip()+
+      scale_fill_brewer(palette = "Set3")+
+      theme_minimal(base_size = 14) +
+      theme(legend.position = "top", legend.box = "horizontal")
+    
+    if (!is.null(facet_sym)) {
+      p <- p + facet_wrap(vars(!!facet_sym))
+    }
+    
+    p
+    
+  })
+ 
   output$plot_couple <- renderPlot({
     
     plot_categorique(
       data = coordonnees_filtrées(),
       fill_var = "COUPLE",
-      facet_var = input$facet_var
+      facet_var = input$facet_var, 
+      titre = "Situation conjugale d'égo"
     )
   })
   
@@ -389,50 +459,120 @@ server <- function(input, output, session) {
     plot_categorique(
       data = coordonnees_filtrées(),
       fill_var = "matr",
-      facet_var = input$facet_var
+      facet_var = input$facet_var, 
+      titre = "Statut matrimonial d'égo"
     )
   })
   
+  output$plot_ecartage <- renderPlot({
+    
+    
+    # Gérer le facet : NULL si aucun facet
+    facet_var <- input$facet_var
+    facet_sym <- if (!is.null(facet_var) && facet_var != "NULL") sym(facet_var) else NULL
+    
+    p <- coordonnees_filtrées() %>%
+      mutate(ecart_age =  anai - ANAI_C) %>%
+      ggplot(aes(x = sexe, y = ecart_age, fill = !!facet_sym)) +
+      geom_boxplot(outlier.alpha = 0.4) +
+      labs(
+        title = "Ecart d'age entre ego et son/sa conjoint-e (ancien-ne conjoint-e si monoparentale)",
+        x = NULL,
+        y = "Année de naissance d'égo - année de naissance du/de la conjoint-e",
+      ) +
+      coord_flip()+
+      scale_fill_brewer(palette = "Set3")+
+      theme_minimal(base_size = 14) +
+      theme(legend.position = "top", legend.box = "horizontal")
+    
+    if (!is.null(facet_sym)) {
+      p <- p + facet_wrap(vars(!!facet_sym))
+    }
+    
+    p
+    
+  })
   
   
   ####
   output$plot_enfants <- renderPlot({
     
-    plot_continu(data = coordonnees_filtrées(), 
-                 y_var = "NBENF",
-                 facet_var = input$facet_var)
+    plot_categorique(data = coordonnees_filtrées() %>%
+                       mutate(NBENF = factor(
+                         NBENF,
+                         levels = 0:14,
+                         ordered = TRUE)),
+                 fill_var = "NBENF",
+                 facet_var = input$facet_var, 
+                 titre = "Nombre d'enfants d'égo")
   })
+  
+  output$plot_enfants_aill <- renderPlot({
+    coordonnees$CBENFAIL
+    plot_categorique(data = coordonnees_filtrées() %>%
+                       mutate(CBENFAIL = replace_na(CBENFAIL, 0), 
+                              nb_enfantsDCD = replace_na(nb_enfantsDCD, 0)) %>%
+                       mutate(CBENFAIL = (as.integer(CBENFAIL) - as.integer(nb_enfantsDCD)) %>%
+                                factor(levels = 0:14,
+                                       ordered = TRUE)),
+                     fill_var = "CBENFAIL",
+                     facet_var = input$facet_var, 
+                     titre = "Nombre d'enfants d'égo résidant ailleurs")
+  })
+  
+  
+  output$plot_enfants_c <- renderPlot({
+    
+    plot_categorique(data = coordonnees_filtrées() %>%
+                       #filter(str_starts(COUPLE, "Oui")) %>%
+                       mutate(NBENFAV_C = NBENFAV_C %>%
+                                replace_na(0) %>%
+                                 factor(levels = 0:14,
+                         ordered = TRUE)),
+                     fill_var = "NBENFAV_C",
+                     facet_var = input$facet_var, 
+                     titre = "Nombre d'enfant du/de la conjoint-e d'égo (ancien-ne conjoint-e si monoparentale)")
+  })
+  
+  
 
 
     output$plot_emploi <- renderPlot({
-      coordonnees_filtrées() %>%
-        ggplot(aes(x = souspop, fill = situa)) +
-        geom_bar(position = "fill") +
-        scale_y_continuous(labels = scales::percent_format()) +
-        labs(title = "Situation d’emploi", x = NULL, y = "Pourcentage") +
-        theme_minimal()
+      plot_categorique(data = coordonnees_filtrées(),
+                       fill_var = "situat",
+                       facet_var = input$facet_var, 
+                       titre = "Situation d'emploi")
     })
-  
-  output$plot_diplome <- renderPlot({
-    coordonnees_filtrées() %>%
-      count(dipl) %>%
-      ggplot(aes(x = reorder(dipl, n), y = n)) +
-      geom_col(fill = "steelblue") +
-      coord_flip() +
-      labs(title = "Niveau de diplôme", x = NULL, y = "Effectifs") +
-      theme_minimal()
-  })
-  # output$plot_enfants <- renderPlot({
-  #   coordonnees_filtrées() %>%
-  #     ggplot(aes(x = NBENF)) +
-  #     geom_histogram(binwidth = 1, fill = "darkgreen") +
-  #     labs(
-  #       title = "Nombre d’enfants",
-  #       x = "Nombre d’enfants",
-  #       y = "Effectifs"
-  #     ) +
-  #     theme_minimal()
-  # })
+    
+    output$plot_statut <- renderPlot({
+      plot_categorique(data = coordonnees_filtrées(),
+                       fill_var = "stat",
+                       facet_var = input$facet_var, 
+                       titre = "Statut dans l'emploi")
+    })
+    
+    output$plot_contrat <- renderPlot({
+      plot_categorique(data = coordonnees_filtrées(),
+                       fill_var = "empl",
+                       facet_var = input$facet_var, 
+                       titre = "Type de contrat")
+    })
+    
+    output$plot_tp <- renderPlot({
+      plot_categorique(data = coordonnees_filtrées(),
+                       fill_var = "tp",
+                       facet_var = input$facet_var, 
+                       titre = "Temps de travail")
+    })
+    
+    output$plot_diplome <- renderPlot({
+      plot_categorique(data = coordonnees_filtrées(),
+                       fill_var = "dipl",
+                       facet_var = input$facet_var, 
+                       titre = "Niveau de diplome")
+    })
+ 
+ 
   
   # ----------------- Onglet 2 : Carte Leaflet -----------------
   output$map <- renderLeaflet({

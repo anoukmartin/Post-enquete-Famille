@@ -1,0 +1,442 @@
+---
+title: "Statistiques descriptives – Enquête"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 4
+    page-layout: full
+css: |
+      .column-page {
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }    
+fig-width: 12
+fig-height: 6
+fig-format: svg
+execute:
+  echo: false
+  warning: false
+  message: false
+  out.width: "100%"
+---
+
+```{r setup}
+library(tidyverse)
+library(here)
+library(scales)
+library(rlang)
+library(sf)
+library(ggplot2)
+library(here)
+library(ggrepel)
+
+knitr::opts_chunk$set(
+  out.width = "100%"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      text = element_text(color = "#212529"),  # couleur texte Cosmo
+      plot.title = element_text(face = "bold"),
+      legend.position = "top"
+    )
+)
+```
+
+```{r}
+coordonnees <- readRDS(here("1_data/processed/donnees_contact.rds")) %>%
+  mutate(
+    across(c(dipl, empl, tp, situat, stat, COUPLE), ~ str_wrap(.x, width = 40))
+  )
+```
+
+```{r}
+plot_categorique <- function(data, fill_var, facet_var = "souspop", titre = "") {
+  
+  fill_sym <- sym(fill_var)
+  facet_sym <- if (!is.null(facet_var) && facet_var != "NULL") sym(facet_var) else NULL
+  
+  # Vérifie si la variable est ordonnée
+  is_ordered <- is.ordered(data[[fill_var]]) || is.numeric(data[[fill_var]])
+  
+  p <- data %>%
+    ggplot(aes(x = sexe, fill = !!fill_sym)) +
+    geom_bar(position = "fill", color = "black") +
+    geom_text(
+      aes(label = after_stat(count)),
+      stat = "count",
+      position = position_fill(vjust = 0.5),
+      color = "black"
+    ) +
+    scale_y_continuous(labels = percent_format()) +
+    labs(
+      title = titre,
+      x = NULL,
+      y = "Pourcentage"
+    ) +
+    coord_flip() +
+    #theme_minimal() +
+    theme(
+      legend.position = "top"
+    )
+  
+  # Choix de la palette
+ if (is_ordered) {
+    p <- p + scale_fill_brewer(palette = "YlOrRd")  # palette séquentielle pour facteur ordonné
+  } else {
+    p <- p + scale_fill_brewer(palette = "Set3")    # palette qualitative pour facteur non ordonné
+  }
+  
+  if (!is.null(facet_sym)) {
+    p <- p + facet_wrap(vars(!!facet_sym))
+  }
+  
+  p
+}
+```
+
+```{r}
+plot_continu <- function(data, y_var, facet_var = "souspop", titre = "", ylab = "") {
+  
+  y_sym <- sym(y_var)
+  facet_sym <- if (!is.null(facet_var) && facet_var != "NULL") sym(facet_var) else NULL
+  
+  p <- data %>%
+    ggplot(aes(x = sexe, fill = !!facet_sym, y = !!y_sym)) +
+    geom_boxplot(outlier.alpha = 0.4) +
+    coord_flip() +
+    labs(
+      title = titre,
+      x = NULL,
+      y = ylab
+    ) +
+    scale_fill_brewer(palette = "Set3") +
+    theme_minimal() +
+    theme(
+      legend.position = "top",
+      legend.box = "horizontal"
+    )
+  
+  if (!is.null(facet_sym)) {
+    p <- p + facet_wrap(vars(!!facet_sym))
+  }
+  
+  p
+}
+```
+
+# Synthèse des consignes de séléction dans l'enquête Famille 2025
+
+Parmi les individus :\
+- Résidants en Ile-de-France (`dep` = 75, 94, 93, 92, 78, 91, 95, 77)\
+- ET ayant au moins un enfant de moins de 27 ans (`ENF` = 1 et (`ANAI_ENFLOGX` \>= 1999 pour au moins un X allant de 1 à `CBENFLOG` **ou** `ANAI_ENFAIL` \>= 1999 pour au moins un Y allant de 1 à `CBENFAIL`))
+
+On sélectionne les individus appartenant aux trois catégories comme ci-dessous :
+
++--------------------------------------------------+---------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------+
+|                                                  | Situation conjugale                                           | En couple                                                                                                                                                                        | Célibataire ou autre                                         |
++==================================================+===============================================================+==================================================================================================================================================================================+==============================================================+
+| **Situation parentale**                          | *Variables utilisées*                                         | *COUPLE = 1 ou 2*                                                                                                                                                                | *COUPLE ≠ 1 et 2*                                            |
++--------------------------------------------------+---------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------+
+| **Séparé du parent d’au moins un enfant**        | *SEP_AUT_PAR_ENFLOGX = 1 pour au moins un X (1 à CBENFLO)\    | **Catégorie 1** : Tous\                                                                                                                                                          | **Catégorie 2** : Tirage ≈ 70 individus, avec contraintes :\ |
+|                                                  | ou SEP_AUT_PAR_ENFAILY = 1 pour au moins un Y (1 à CBENFAIL)* | n = 42 *, probablement plus si on prend les enfants de moins de 27 ans au lieu de 2, ou peut-être un peu moins si ces individus ont été sélectionnés pour d’autre post-enquêtes* | - ≥ 25 individus ayant ≥1 enfant hors ménage\                |
+|                                                  |                                                               |                                                                                                                                                                                  | - ≥ 35 individus avec niveau diplôme \< bac+3\               |
+|                                                  |                                                               |                                                                                                                                                                                  | - ≥ 10 individus en CDD\                                     |
+|                                                  |                                                               |                                                                                                                                                                                  | - ≥ 20 propriétaires de leur résidence principale\           |
+|                                                  |                                                               |                                                                                                                                                                                  | - ≥ 20 locataires de leur résidence principale               |
++--------------------------------------------------+---------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------+
+| **En couple avec le parent de tous ses enfants** | *SEP_AUT_PAR_ENFLOGX = 2 pour tous X (1 à CBENFLO)\           | **Catégorie 3** : Tirage ≈ 70 individus, avec contraintes :\                                                                                                                     | sans objet                                                   |
+|                                                  | et SEP_AUT_PAR_ENFAILY = 2 pour tous Y (1 à CBENFAIL)*        | - ≥ 25 individus ayant ≥1 enfant hors ménage\                                                                                                                                    |                                                              |
+|                                                  |                                                               | - ≥ 35 individus avec niveau diplôme \< bac+3\                                                                                                                                   |                                                              |
+|                                                  |                                                               | - ≥ 10 individus en CDD\                                                                                                                                                         |                                                              |
+|                                                  |                                                               | - ≥ 20 propriétaires de leur résidence principale\                                                                                                                               |                                                              |
+|                                                  |                                                               | - ≥ 20 locataires de leur résidence principale                                                                                                                                   |                                                              |
++--------------------------------------------------+---------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------+
+
+::: callout-note
+## Note sur l'échantillon de l'enquête Familles 2025
+
+L’enquête Familles 2025 est adossée au recensement. Dans un premier temps, un échantillon de communes a été sélectionné parmi celles recensées en 2025. Ensuite, un sous-échantillon de zones géographiques a été choisi à l’intérieur de ces communes. Enfin, dans chaque zone, tous les adultes d’un sexe prédéterminé ont été interrogés : dans environ un tiers des zones, tous les hommes majeurs ont été inclus, tandis que dans les deux tiers restants, toutes les femmes majeures ont été enquêtées. Les communes d'île de France ont été sur-représentées pour permettres des analyse à l'échelle des département de la région.
+
+Le taux de réponse à l'enquête famille est d'un peu plus de 55%
+:::
+
+# Généralités
+
+## Indicateurs globaux
+
+```{r}
+coordonnees %>%
+  summarise(
+    nb_individus = n(),
+    age_moyen = mean(2025 - anai, na.rm = TRUE),
+    pct_femmes = mean(sexe == "Féminin", na.rm = TRUE) * 100,
+    nb_enfants = mean(NBENF, na.rm = TRUE),
+    pct_faibles_diplomes = mean(
+      dipl %in% c(
+        "Aucun diplôme",
+        "BEPC, brevet élémentaire, brevet des\ncollèges, DNB",
+        "CAP, BEP ou diplôme de niveau équivalent"
+      ),
+      na.rm = TRUE
+    ) * 100
+  ) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 1))) %>%
+  knitr::kable()
+```
+
+## Répartition géographique des individus de l'échantillon
+
+```{r, include = F}
+# URL du shapefile ZIP officiel
+url <- "https://data.iledefrance.fr/api/explore/v2.1/catalog/datasets/communes-france/exports/shp?lang=fr&timezone=Europe%2FBerlin&use_labels=true"
+
+# Chemin temporaire pour télécharger le zip
+temp <- tempfile(fileext = ".zip")
+download.file(url, temp)
+
+# Décompresser le zip dans un dossier temporaire
+unzip_dir <- tempdir()
+unzip(temp, exdir = unzip_dir)
+
+# Trouver le fichier .shp dans le dossier décompressé
+shp_file <- list.files(unzip_dir, pattern = "\\.shp$", full.names = TRUE)
+
+# Lire le shapefile
+idf_sf <- st_read(shp_file[1])
+
+# Visualiser
+carte_idf <- ggplot(idf_sf) +
+  geom_sf(data = idf_sf, fill = "grey95", color = "grey60") +
+  coord_sf(expand = FALSE) +
+  theme_void() 
+
+coordonnees <- coordonnees %>%
+  mutate(codecommune = if_else(str_starts(result_citycode, "751"), "75056", result_citycode))
+  
+idf_sf$codecommune <- idf_sf$Code_Offici.8 %>%
+  str_remove_all("\\['") %>% str_remove_all("'\\]")
+
+coordonnees$result_citycode[!coordonnees$codecommune %in% idf_sf$codecommune]
+communes_counts <- coordonnees %>%
+  #mutate(Commune = if_else(str_starts(Commune, "PARIS"), "PARIS", Commune)) %>%
+  group_by(codecommune, sexe) %>%  # ou code_postal si tu utilises les codes postaux
+  summarise(nb_individus = n())
+
+
+
+idf_sf_counts <- idf_sf %>%
+  left_join(communes_counts, by = "codecommune") %>%
+  filter(!is.na(nb_individus))
+
+coordonnees <- coordonnees %>%
+  left_join(idf_sf %>%
+              select(codecommune, Libelle_CAT.1, Statut_Comm.1), 
+            by = "codecommune") 
+
+centres <- st_centroid(idf_sf_counts)
+coords <- st_coordinates(centres)
+centres <- centres %>%
+  mutate(
+    X = coords[, 1],
+    Y = coords[, 2]
+  )
+
+
+```
+
+::: column-page
+```{r}
+#| out-width: 100%
+#| fig-format: svg
+
+
+ggplot() +
+  geom_sf(data = idf_sf, fill = "grey95", color = "grey60") +  # fond des communes
+  geom_sf(data = centres, aes(size = nb_individus, color = sexe ), alpha = 0.4) +
+  geom_text_repel(
+    data = centres,
+    aes(x = X, y = Y, label = paste0(str_to_title(Nom_Officie.8), " [", nb_individus, "]")),
+    size = 2.5,
+    max.overlaps = Inf,
+    min.segment.length = 1
+  ) +
+  scale_size_continuous(
+    range = c(1, 15),
+    name = "Nombre d'individus\n dans l'échantillon"
+  ) +
+  scale_color_discrete(
+    name = "Sexe des individus\nenquêtés dans\nla commune"
+  ) +
+  coord_sf(expand = FALSE, clip = "on") +
+  theme_void()+ 
+  theme(legend.position = "top", 
+        plot.margin = margin(0, 0, 0, 0),
+  panel.spacing = unit(0, "pt"))
+```
+:::
+
+::: callout-note
+## Note sur les traitements statistiques ci-dessous
+
+Les traitements présentés ci-dessous portent sur les 200 individus de l’échantillon fourni par l’Insee. Dans la plupart des analyses, les situations ont été distinguées en fonction de la configuration familiale et du sexe de l’enquêté. Les variables n’ont pas été recodées : il s’agit des libellés bruts tels qu’ils figurent dans le questionnaire.
+
+Les effectifs sont généralement indiqués par le nombre inscrit au centre de chaque rectangle correspondant à la catégorie considérée.
+:::
+
+# Situation familiale
+
+## Configuration familiale
+
+```{r}
+plot_categorique(
+  data = coordonnees,
+  fill_var = "souspop",
+  facet_var = NULL,
+  titre = "Configuration familiale d’égo"
+)
+```
+
+## Âge d’égo
+
+```{r}
+coordonnees %>%
+  mutate(age = 2025 - anai) %>%
+  plot_continu(
+    y_var = "age",
+    titre = "Âge d’égo",
+    ylab = "Âge"
+  )
+```
+
+## Situation conjugale
+
+```{r}
+plot_categorique(coordonnees, "COUPLE", titre = "Situation conjugale d’égo")
+```
+
+## Statut matrimonial
+
+```{r}
+plot_categorique(coordonnees, "matr", titre = "Statut matrimonial d’égo")
+```
+
+## Écart d’âge avec le/la conjoint·e
+
+```{r}
+coordonnees %>%
+  mutate(ecart_age = anai - ANAI_C) %>%
+  plot_continu(
+    y_var = "ecart_age",
+    titre = "Écart d’âge entre égo et conjoint·e (ancien·ne conjoint·e si monoparentale) ",
+    ylab = "Age du/de la conjoint·e - âge d'égo"
+  )
+```
+
+## Nombre d’enfants d’égo
+
+```{r}
+coordonnees %>%
+  mutate(NBENF = factor(NBENF, levels = 0:14, ordered = TRUE)) %>%
+  plot_categorique("NBENF", titre = "Nombre d’enfants d’égo")
+```
+
+## Enfants résidant ailleurs
+
+```{r}
+coordonnees %>%
+  mutate(
+    CBENFAIL = replace_na(CBENFAIL, 0),
+    nb_enfantsDCD = replace_na(nb_enfantsDCD, 0),
+    enfants_ailleurs = as.integer(CBENFAIL) - as.integer(nb_enfantsDCD),
+    enfants_ailleurs = factor(enfants_ailleurs, levels = 0:14, ordered = TRUE)
+  ) %>%
+  plot_categorique("enfants_ailleurs", titre = "Nombre d’enfants d’égo résidant ailleurs")
+```
+
+## Enfants du/de la conjoint·e
+
+```{r}
+coordonnees %>%
+  mutate(
+    NBENFAV_C = replace_na(NBENFAV_C, 0),
+    NBENFAV_C = factor(NBENFAV_C, levels = 0:14, ordered = TRUE)
+  ) %>%
+  plot_categorique("NBENFAV_C", titre = "Nombre d’enfants du/de la conjoint·e (ancien·ne conjoint·e si monoparentale)")
+```
+
+# Position sociale
+
+## Niveau de diplôme
+
+```{r}
+
+plot_categorique(coordonnees %>%
+                   mutate(dipl = fct_relevel(dipl, 
+    "Aucun diplôme", "BEPC, brevet élémentaire, brevet des\ncollèges, DNB",
+    "CAP, BEP ou diplôme de niveau équivalent", "Baccalauréat professionnel, brevet\nprofessionnel, de technicien ou\nd’enseignement, diplôme équivalent",
+    "Baccalauréat général ou technologique,\nbrevet supérieur",
+    "BTS, DUT, Deug, Deust, diplôme de la\nsanté ou du social de niveau bac+2,\ndiplôme équivalent",
+    "Licence, licence pro, BUT, maîtrise,\ndiplôme équivalent de niveau bac+3 ou\nbac+4",
+    "Master, DEA, DESS, diplôme grande école\nniveau bac+5, doctorat de santé",
+    "Doctorat de recherche (hors santé)"
+  ))
+                 
+                 , "dipl", titre = "Niveau de diplôme")
+```
+
+## Situation d’emploi
+
+```{r}
+plot_categorique(coordonnees, "situat", titre = "Situation d’emploi")
+```
+
+## Statut dans l’emploi
+
+```{r}
+plot_categorique(coordonnees, "stat", titre = "Statut dans l’emploi")
+```
+
+## Type de contrat
+
+```{r}
+plot_categorique(coordonnees, "empl", titre = "Type de contrat")
+```
+
+## Temps de travail
+
+```{r}
+plot_categorique(coordonnees, "tp", titre = "Temps de travail")
+```
+
+## Aire urbaine
+
+```{r}
+
+
+## Aires urbaines 
+
+plot_categorique(
+  data = coordonnees,
+  fill_var = "Libelle_CAT.1",
+  facet_var = "souspop",
+  titre = "Aire urbaine d'habitation"
+)
+
+```
+
+## Ruralité
+
+```{r}
+## Aires urbaines 
+
+plot_categorique(
+  data = coordonnees,
+  fill_var = "Statut_Comm.1",
+  facet_var = "souspop",
+  titre = "Ruralité"
+)
+```
