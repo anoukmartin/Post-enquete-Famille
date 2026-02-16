@@ -1,17 +1,17 @@
 ---
 title: ""
 format:
-  pdf:
-    documentclass: article
-    geometry:
-      - left=1cm
-      - right=1cm
-      - top=1cm
-      - bottom=1cm
-      - heightrounded
-    header-includes:
-      - \usepackage[absolute,overlay]{textpos}
-  #html: default
+  # pdf:
+  #   documentclass: article
+  #   geometry:
+  #     - left=1cm
+  #     - right=1cm
+  #     - top=1cm
+  #     - bottom=1cm
+  #     - heightrounded
+  #   header-includes:
+  #     - \usepackage[absolute,overlay]{textpos}
+  html: default
 editor: visual
 params:
   id_individu: "CAROLINE 1982-12-24"
@@ -150,7 +150,7 @@ cat("
 ::: {.callout-important}
 ### Informations de contact
 
-", texte_coordonnees, "
+", coordonnees$coordonnes_html, "
 
 
 :::
@@ -189,43 +189,52 @@ cat("
 
 cat("
 ::: {.callout-note}
-### Résumé de situation socio-démographique
+### Résumé de situation socio-démographique 
 
-#### Individu : 
-- Prénom : ", coordonnees$PRENOM.x, "
-- Nom : ", coordonnees$NOMFAMILLE, "
-- Age : ", 2026 - coordonnees$anai, "
-- Sexe : ", coordonnees$sexe, "
-- En emploi : ", coordonnees$situat, "
-- Niveau de diplôme : ", coordonnees$dipl, "
-- Statut d'emploi : ", coordonnees$empl,  "
-- Temps de travail : ", coordonnees$tp, "
-- Profession : ", str_to_sentence(coordonnees$profession) ,"
-- Entreprise : ", coordonnees$rs, "
+", 
+  coordonnees$resume_sociodemo_html, 
+"
+:::")
 
-#### Situation conjugale
-- En couple : ", coordonnees$COUPLE, "
-- Statut matrimonial : ", coordonnees$matr, "
-
-#### (Dernier) conjoint 
-- Prénom : ", coordonnees$PRENOM_C, "
-- Age : ", 2026 - coordonnees$ANAI_C, "
-- Sexe : ", coordonnees$SEXE_C, "
-- Emploi du conjoint : ", coordonnees$STATUT_C, "
-
-#### Enfants 
-- Enfants dans le logement : ", coordonnees$enfants_logement, "
-- Enfants résidants ailleurs : ", coordonnees$enfants_ailleurs, "
-- Enfants du conjoint : ", coordonnees$ENFAV_C, "
-- Enfants décédés : ", coordonnees$nb_enfantsDCD, "
-
-#### Classement 
-- Sous-population d'apparenance : ", coordonnees$souspop,"
-- Situation familiale : ", coordonnees$description_personalisee, "
-
-:::
-
-")
+# cat("
+# ::: {.callout-note}
+# ### Résumé de situation socio-démographique
+# 
+# #### Individu : 
+# - Prénom : ", coordonnees$PRENOM.x, "
+# - Nom : ", coordonnees$NOMFAMILLE, "
+# - Age : ", 2026 - coordonnees$anai, "
+# - Sexe : ", coordonnees$sexe, "
+# - En emploi : ", coordonnees$situat, "
+# - Niveau de diplôme : ", coordonnees$dipl, "
+# - Statut d'emploi : ", coordonnees$empl,  "
+# - Temps de travail : ", coordonnees$tp, "
+# - Profession : ", str_to_sentence(coordonnees$profession) ,"
+# - Entreprise : ", coordonnees$rs, "
+# 
+# #### Situation conjugale
+# - En couple : ", coordonnees$COUPLE, "
+# - Statut matrimonial : ", coordonnees$matr, "
+# 
+# #### (Dernier) conjoint 
+# - Prénom : ", coordonnees$PRENOM_C, "
+# - Age : ", 2026 - coordonnees$ANAI_C, "
+# - Sexe : ", coordonnees$SEXE_C, "
+# - Emploi du conjoint : ", coordonnees$STATUT_C, "
+# 
+# #### Enfants 
+# - Enfants dans le logement : ", coordonnees$enfants_logement, "
+# - Enfants résidants ailleurs : ", coordonnees$enfants_ailleurs, "
+# - Enfants du conjoint : ", coordonnees$ENFAV_C, "
+# - Enfants décédés : ", coordonnees$nb_enfantsDCD, "
+# 
+# #### Classement 
+# - Sous-population d'apparenance : ", coordonnees$souspop,"
+# - Situation familiale : ", coordonnees$description_personalisee, "
+# 
+# :::
+# 
+# ")
 
 
 

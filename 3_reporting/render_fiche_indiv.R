@@ -1,5 +1,5 @@
 # parametres 
-type <- "pdf"
+type <- "html"
 full <- TRUE
 
 
@@ -17,6 +17,7 @@ if (full){synth <- "complets"} else {synth <- "synthétiques"}
 
 output_dir <- paste0("3_reporting/individus/", type, "_", synth)
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+output_dir
 
 # Suivi des rendus
 produit <- setNames(
