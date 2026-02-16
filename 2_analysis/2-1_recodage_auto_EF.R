@@ -1,5 +1,5 @@
 # =======================================================================
-# 🧩 Script de recodage des variables du questionnaire EF 2025
+# 🧩 Script de recodage des variables du questionnaire EF 2025 et ERA (BI) 2025
 # =======================================================================
 
 # Chargement des librairies
@@ -11,6 +11,8 @@ library(purrr)
 library(stringr)
 library(questionr)
 source("fonctions/match_vars.R")
+
+
 # -----------------------------------------------------------------------
 # 1. Charger les données
 # -----------------------------------------------------------------------
@@ -21,10 +23,12 @@ BI <- readRDS(file = "1_data/processed/BI.rds")
 liens <- readRDS(file = "1_data/processed/liens.rds")
 coordonnees <- readRDS(file = "1_data/processed/coordonnees.rds")
 
+
+# Uniformisation des noms de variables
 names(EF)
-names(BI)
-names(BI) <- str_remove(names(BI), "_x")
-names(BI) <- str_remove(names(BI), "_merge")
+
+
+# Unifromisation des identifiant invifiduels 
 BI <- BI  %>%
   mutate(interrogationId = str_sub(identifiant, 1, 9),
          identifiant = str_sub(identifiant, 10, -1))
@@ -33,6 +37,10 @@ liens <- liens  %>%
   mutate(interrogationId = str_sub(identifiant, 1, 9),
          identifiant = str_sub(identifiant, 10, -1)) 
 
+# Anomalies importantes 
+
+
+
 # les deux alexandra
 BI[BI$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- paste0("ALEXANDRA 1973-05-09", c(" N°1", " N°2"))
 EF[EF$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- paste0("ALEXANDRA 1973-05-09", c(" N°1", " N°2"))
@@ -40,12 +48,20 @@ coordonnees[coordonnees$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <-
 liens[liens$identifiant == "ALEXANDRA 1973-05-09", "identifiant"][1:3] <- "ALEXANDRA 1973-05-09 N°1"
 liens[liens$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- "ALEXANDRA 1973-05-09 N°2"
 
+
+
+
+# -----------------------------------------------------------------------
+# 1. Charger les metadonnées des variables
+# -----------------------------------------------------------------------
+
 vars_BI <- readRDS(file = "1_data/processed/vars_EAR.rds")
 vars_EF <- readRDS(file = "1_data/processed/vars_EF.rds")
 
 # Vérification
 glimpse(vars_EF)
 glimpse(vars_BI)
+
 
 # 2. quelques améliorations à la main pour améliorer l'appariment 
 
@@ -55,8 +71,8 @@ gender_var <- vars_EF %>%
   filter(str_detect(Variable, "SEXE")) 
 # On va changer les valeurs pour ces variables puis on corrigera le dictionnaire 
 gender_var$Variable
-
-EF <- left_join(EF, BI[, c("identifiant", "sexe")])
+names(BI)[names(BI) %in% names(EF)]
+EF <- left_join(EF, BI[, c("identifiant", "sexe")], by = "identifiant")
 EF$SEXE_C
 EF <- EF %>%
   mutate(SEXE_C = case_when(
@@ -82,129 +98,12 @@ vars_EF <- vars_EF %>%
 EF$sexe <- NULL
 rm(gender_var)
 EF$ADOPT_ENFLOG1
-# On ajoute des variables qui manque 
-head(vars_EF)
 
 
-temp <- vars_EF[vars_EF$Variable == "AIDE_APPORT", ]
-temp$Question <- temp$Question %>%
-  str_replace("\\(", "?") %>%
-  str_sub(1, 173) 
-temp <- temp[rep(1, 5), ]
-temp$Variable <- paste0(temp$Variable, 1:5)
-temp$Question <- paste(temp$Question, c("Oui, une aide pour les tâches quotidiennes", 
-                                         "Oui, une aide financière ou matérielle", 
-                                         "Oui, un soutien moral",
-                                         "Oui, vous êtes tuteur / tutrice ou curateur/curatrice",
-                                         "Non, aucune aide de ce type"))
-temp$Modalites <- "1 - Oui | 2 - Non"
-
-vars_EF <- bind_rows(vars_EF %>%
-                       filter(Variable != "AIDE_APPORT"), 
-                     temp)
-
-temp$Variable <- paste0("QUI_AID_APP_", 1:5)
-temp <- temp[-5, ]
-temp$Question <- temp$Question %>%
-  str_sub( 175, -1)
-temp$Question <- paste0("A qui ? ", temp$Question)
-temp <- temp[rep(1:4, 5+4+4+3), ]
-temp <- temp %>% arrange(Variable)
-temp$Variable <- paste0(temp$Variable, rep(c(rep("A", 5), rep("B", 4), rep("C", 4), rep("D", 3)), 4))
-temp$Variable <- paste0(temp$Variable, rep(c(1:4, "D", 1:3, "D", 1:3, "D", 1:2, "D"), 4))
-temp <- temp %>%
-  mutate(Question = case_when(
-    str_ends(Variable, "1") ~ str_glue("{Question} Vos parents/votre parent"), 
-    str_ends(Variable, "D") ~ str_glue("{Question} Autre : en clair"), 
-    str_ends(Variable, "A2|B2") ~ str_glue("{Question} Votre conjoint-e"), 
-    str_ends(Variable, "A3|C2") ~ str_glue("{Question} Votre/vos enfant(s)"), 
-    str_ends(Variable, "A4|B3|C3|D2") ~ str_glue("{Question} Un autre membre de votre famille")
-  ))
-
-temp <- temp %>%
-  mutate(Modalites = if_else(
-    str_ends(Variable, "D"), NA, Modalites))
-
-vars_EF <- bind_rows(vars_EF, temp)
 
 
-## AIde recue 
 
-temp <- vars_EF[vars_EF$Variable == "AIDE_RECUE", ]
-temp$Question <- temp$Question %>%
-  str_replace("\\(", "?") %>%
-  str_sub(1, 204) 
-EF$AIDE_RE
-temp <- temp[rep(1, 4), ]
-temp$Variable <- paste0(temp$Variable, 1:4)
-
-temp$Question <- paste(temp$Question, c("Oui, une aide pour les tâches quotidiennes", 
-                                        "Oui, une aide financière ou matérielle", 
-                                        "Oui, un soutien moral",
-                                        "Non, aucune aide de ce type"))
-temp$Modalites <- "1 - Oui | 2 - Non"
-
-vars_EF <- bind_rows(vars_EF %>%
-                       filter(Variable != "AIDE_RECUE"), 
-                     temp)
-
-temp$Variable <- paste0("QUI_AID_REC_", 1:4)
-temp <- temp[-4, ]
-temp$Question <- temp$Question %>%
-  str_sub( 206, -1)
-temp$Question <- paste0("De qui ? ", temp$Question)
-temp <- temp[rep(1:3, 5+4+4+3), ]
-temp <- temp %>% arrange(Variable)
-temp$Variable <- paste0(temp$Variable, rep(c(rep("A", 5), rep("B", 4), rep("C", 4), rep("D", 3)), 3))
-temp$Variable <- paste0(temp$Variable, rep(c(1:4, "D", 1:3, "D", 1:3, "D", 1:2, "D"), 3))
-temp <- temp %>%
-  mutate(Question = case_when(
-    str_ends(Variable, "1") ~ str_glue("{Question} Vos parents/votre parent"), 
-    str_ends(Variable, "D") ~ str_glue("{Question} Autre : en clair"), 
-    str_ends(Variable, "A2|B2") ~ str_glue("{Question} Votre conjoint-e"), 
-    str_ends(Variable, "A3|C2") ~ str_glue("{Question} Votre/vos enfant(s)"), 
-    str_ends(Variable, "A4|B3|C3|D2") ~ str_glue("{Question} Un autre membre de votre famille")
-  ))
-
-temp <- temp %>%
-  mutate(Modalites = if_else(
-    str_ends(Variable, "D"), NA, Modalites))
-
-vars_EF <- bind_rows(vars_EF, temp)
-
-
-vars_EF <- bind_rows(vars_EF, 
-     data.frame(Variable = c("AG_ENFLOG1", 
-                                         "AG_ENFAIL1", 
-                                         "ADOPT_ENFLOG1", 
-                                         "ADOPT_ENFAIL1", 
-                                         "ANADOPT_ENFLOG1", 
-                                         "ANADOPT_ENFAIL1", 
-                                         "PNAI_PAR1",
-                                         "TYP_PLACE1"), 
-                            Question = c("Age de l'enfant vivant dans le logement",
-                                         "Age de l'enfant vivant ailleur", 
-                                         "Adoption de l'enfant vivant dans le logement",
-                                         "Adoption de l'enfant vivant ailleur", 
-                                         "Année de l'adoption de l'enfant vivant dans le logement", 
-                                         "Année de l'adoption de l'enfant vivant ailleur", 
-                                         "Pays de naissance du parent", 
-                                         "Type de placement"),
-                            Modalites = c(NA, NA, rep("1 - Oui | 2 - Non", 2), NA, NA, NA, NA),
-                            Type = c("Quantitative", "Quantitative", "Qualitative", "Qualitative", 
-                                     "Quantitative", "Quantitative", "Qualitative",  "Qualitative" 
-                                     )))
-
-
-head(vars_BI)
-temp <- rbind(vars_BI[1, ], vars_BI[1, ], vars_BI[1, ])
-temp$Variable <- c("jnai", "mnai", "anai")
-temp$Question <- c("jour de naissance", "mois de naissance", "année de naissance")
-
-vars_BI <- rbind(vars_BI, temp)
-rm(temp)
-
-
+#
 names(EF)[str_starts(names(EF), "RP")] <- str_remove(names(EF)[str_starts(names(EF), "RP")], "RP")
 
 
@@ -215,7 +114,12 @@ vars_BI$Source <- "EAR"
 vars_EF$Source <- "EF"
 
 vars_all <- bind_rows(vars_BI, vars_EF)
+
+vars_all <- vars_all %>%
+  mutate(Valeur = if_else(Modalites == "1 - Oui | 2 - Non", "Boléenne", Valeur)) %>%
+  mutate(Type = if_else(Modalites == "1 - Oui | 2 - Non", "Qualitative", Valeur)) 
 BIEF <- left_join(BI, EF, by = "identifiant")
+BIEF <- left_join(coordonnees, BIEF)
 
 # On match les noms de variables
 anomalie1 <- names(BIEF)[!(names(BIEF) %in% vars_all$Variable)]
@@ -223,8 +127,7 @@ anomalie2 <- vars_all$Variable[!(vars_all$Variable %in% names(BIEF))]
  
 
 # Trouver les correspondances
-correspondances <- trouver_correspondances(names(BIEF), vars_all$Variable, seuil_similarite = -10)
-
+correspondances <- trouver_correspondances(names(BIEF), vars_all$Variable, seuil_similarite = -10) 
 # test 
 names(BIEF)[!(names(BIEF) %in% correspondances$Variable.x)]
 
@@ -284,7 +187,7 @@ orph <- vars_all2 %>%
     str_detect(Variable, regex('rgl', ignore_case = T)) ~ "Code RGL",
   ))
 
-
+orph
 vars_all2 <- vars_all2 %>%
   filter(!is.na(Var)) %>%
   bind_rows(orph)
@@ -346,9 +249,10 @@ vars_all2 <- vars_all2 %>%
       Qui == "ego" & str_detect(Variable, "ETU") ~ "Etudes",
       Qui == "ego" & str_detect(Variable, "POSTENQ") ~ "Post-enquête",
       Qui == "ego" & str_detect(Variable, regex("iris|rga|rgl|codegeo|codedepartement", ignore_case = T)) ~ "Localisation",
-      Qui == "ego" & str_detect(Variable, "id|ID|Id") ~ "Technique",
+      Qui == "ego" & str_detect(Variable, "id|ID|Id|IND|QUEST|VAL") ~ "Technique",
     Qui == "ego" ~ "id"
   ))
+
 
 
 
@@ -380,6 +284,7 @@ vars_all2$Theme <- vars_all2$Theme %>% fct_relevel(
 vars_all2 <- vars_all2 %>%
   arrange(Source, Qui, Theme)
 vars_all2$k <- row.names(vars_all2)
+vars_all2
   
 # -----------------------------------------------------------------------
 # 2. Nettoyer les Modalites pour préparation du recodage
@@ -390,12 +295,181 @@ vars_all2$k <- row.names(vars_all2)
 # On va transformer cela en liste utilisable par R
 vars_clean <- vars_all2 %>%
   filter(Variable %in% names(BIEF)) %>%
-  filter(!is.na(Modalites)) %>%
+  #filter(!is.na(Modalites)) %>%
   mutate(
     Modalites = str_split(Modalites, "\\|"),
-    Modalites = map(Modalites, ~str_trim(.x))
-  )
+    Modalites = map(Modalites, ~str_trim(.x)), 
+    Modalites = if_else(Modalites == "NA", NA, Modalites)
+  ) 
 head(vars_clean)
+glimpse(vars_clean)
+# glimpse(BIEF)
+
+
+# ---------------------------------------------------------------------
+# T3. Recodage auto labelled ------------------------------------------
+# ---------------------------------------------------------------------
+
+library(labelled)
+build_labels <- function(modalites) {
+  tibble(raw = modalites) %>%
+    mutate(
+      code = str_extract(raw, "^[0-9]+") |> as.integer(),
+      label = str_remove(raw, "^[0-9]+\\s*[–-]\\s*")
+    ) %>%
+    select(code, label) %>%
+    { setNames(.$code, .$label) }
+}
+
+build_labels(modalites = c("1 – Masculin", "2 – Féminin"))
+
+
+apply_dictionary <- function(data, dico, varname) {
+  
+  if (!varname %in% names(data)) return(data)
+  
+  meta <- dico %>%
+    filter(Variable == varname) %>%
+    slice(1)
+  
+  if (nrow(meta) == 0) return(data)
+  
+  # 1. label de variable (toujours)
+  var_label(data[[varname]]) <- as.character(meta$Question)
+  attr(data[[varname]], "Type") <- as.character(meta$Type)
+  attr(data[[varname]], "Valeur") <- as.character(meta$Valeur)
+  print(paste0("# [", varname, "] ", var_label(data[[varname]]), " : ", 
+               attr(data[[varname]], "Type"), ", ", attr(data[[varname]], "Valeur")))
+  
+  # 2. value labels uniquement si applicable
+  if (!is.na(meta$Type) & meta$Type == "Qualitative") {
+    
+    x <- data[[varname]]
+    
+    # cas problématique : tout NA ou logique
+    if (all(is.na(x)) || is.logical(x)) {
+      return(data)
+    }
+    
+    # modalités présentes
+    mods <- meta$Modalites[[1]]
+    if (is.null(mods) || length(mods) == 0) {
+      return(data)
+    }
+    
+    labels <- build_labels(mods)
+    
+    if (length(labels) > 0) {
+      data[[varname]] <- labelled(
+        x,
+        labels = labels,
+        label = var_label(x)
+      )
+    }
+    print(freq(data[[varname]]))
+  } else {
+  print(summary(data[varname]))}
+  return(data)
+}
+
+
+
+vars_to_process <- intersect(vars_clean$Variable, names(BIEF))
+length(vars_to_process)
+
+BIEF_rec <- BIEF
+for (v in vars_to_process) {
+  BIEF_rec <- apply_dictionary(BIEF_rec, vars_clean, v)
+}
+
+
+## Recodage auto terminé : 
+
+
+
+# ------------------------------------------------------------------------------
+# 4. Codes géographiques -------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+## On ajoute des labels pour les variables géo
+
+# URL du shapefile ZIP officiel
+url <- "https://data.iledefrance.fr/api/explore/v2.1/catalog/datasets/communes-et-arrondissements-municipaux-annee-en-cours/exports/shp?lang=fr&timezone=Europe%2FBerlin&use_labels=true"
+
+# Chemin temporaire pour télécharger le zip
+temp <- tempfile(fileext = ".zip")
+download.file(url, temp)
+
+# Décompresser le zip dans un dossier temporaire
+unzip_dir <- tempdir()
+unzip(temp, exdir = unzip_dir)
+
+# Trouver le fichier .shp dans le dossier décompressé
+shp_file <- list.files(unzip_dir, pattern = "\\.shp$", full.names = TRUE)
+
+# Lire le shapefile
+idf_sf <- st_read(shp_file[1])
+
+# Visualiser
+carte_idf <- ggplot(idf_sf) +
+  geom_sf(data = idf_sf, fill = "grey95", color = "grey60") +
+  coord_sf(expand = FALSE) +
+  theme_void() 
+carte_idf
+
+
+
+
+
+
+## Liens
+
+egos <- BIEF_rec %>%
+  mutate(age_x = 2025-anai, 
+         relation_ego = "EGO",
+         sexe_x = str_sub(sexe, 1, 1)) %>%
+  select(identifiant, sexe_x, age_x, relation_ego)
+
+liens <- liens%>%
+  mutate(
+    sexe_x = case_when(
+      sexe_x == "2" ~ "F", 
+      sexe_x == "1" ~ "M"
+    ), 
+    age_x = 2025-anai_x)
+
+menages <- bind_rows(egos, liens) %>% 
+  arrange(identifiant) %>%
+  mutate(libelle_ego = fct_recode(as.character(lien_r),
+                                  "Conjoint-e" = "1", 
+                                  "Enfant" = "2", 
+                                  "Beau fils ou belle fille (enfant du conjoint-e)" = "5", 
+                                  "Frère ou soeur (demi et quasi compris)" = "8", 
+                                  "Neveu ou nièce" = "11", 
+                                  "Belle-soeur ou beau-frère" = "14", 
+  )) %>%
+  mutate(relation_ego = case_when(
+    relation_ego == "EGO" ~ relation_ego, 
+    TRUE ~libelle_ego
+  )) %>%
+  select(identifiant, sexe_x, age_x, relation_ego)
+
+saveRDS(liens, file = "1_data/processed/liens.rds")
+saveRDS(menages, file = "1_data/processed/menages.rds")
+
+## Coordonnées
+
+saveRDS(coordonnees, file = "1_data/processed/coordonnees.rds")
+
+codecommunes <- read_csv("https://www.data.gouv.fr/api/1/datasets/r/7acc46ad-1c79-43d9-8f2d-d0a8ec78c068")
+codecommunes$Commune <- paste0(codecommunes$nomCommune, " (", codecommunes$codeDepartement, ")")
+codecommunes$codeCommune
+
+BIEF <- BIEF %>% 
+  mutate(across(contains("COM"), ~ str_remove(.x, "2024"))) %>%
+  mutate(across(contains("COM"),
+                ~ codecommunes$Commune[match(.x, codecommunes$codeCommune)]))
+
 
 # -----------------------------------------------------------------------
 # 3. Créer dynamiquement les instructions de recodage
@@ -442,6 +516,7 @@ source("2_analysis/2-2_recode_BIEF_2025.R", verbose = T)
 # Après exécution, toutes les variables codées numériquement auront des libellés texte
 
 saveRDS(BIEF, file = "1_data/processed/BIEF.rds")
+saveRDS(BIEF_rec, file = "1_data/processed/BIEF_recodé.rds")
 saveRDS(vars_all2, file = "1_data/processed/vars_all.rds")
 saveRDS(liens, file = "1_data/processed/liens.rds")
 saveRDS(coordonnees, file = "1_data/processed/coordonnees.rds")

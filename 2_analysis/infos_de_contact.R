@@ -177,15 +177,14 @@ rm(tab)
 ############################################################
 ### 6. Comptage des enfants selon l’âge et la résidence  ###
 ############################################################
-infos
+
 infos <- infos %>%
   rowwise() %>%
   mutate(
     nb_enfantsDCD = sum(c_across(starts_with("DC_ENF")) == "Non", na.rm = TRUE),
     nb_enfantsVivants = NBENF - nb_enfantsDCD,
     nb_jeunesEnfants7 = sum(c_across(starts_with("ANAI_ENF")) > 2018, na.rm = TRUE),
-    nb_enfantsMajeurs = sum(c_across(starts_with("ANAI_ENF")) <= 2006, na.rm = TRUE),
-    nb_enfantsAilleurs = sum(c_across(starts_with("ENFAIL")) <= 2006, na.rm = TRUE)
+    nb_enfantsMajeurs = sum(c_across(starts_with("ANAI_ENF")) <= 2006, na.rm = TRUE)
   ) %>%
   ungroup()
 
@@ -310,6 +309,8 @@ infos <- infos %>%
     ENFAV_C, 
     NBENFAV_C,
     NBENF, 
+    CBENFLOG, 
+    CBENFAIL,
     nb_enfantsDCD,
     souspop,
     enfants_logement,
@@ -329,7 +330,7 @@ head(infos, 15)
 saveRDS(coordonnees_geo,"1_data/processed/coordonnees_geocodes.rds")
 infos <- left_join(coordonnees_geo, infos)
 infos <- infos %>%
-  select(-starts_with("result")) %>%
+  #select(-starts_with("result")) %>%
   mutate(coordonnes_html = paste0( "<p>",
                                    "📞 <b>Téléphone :</b> ", POSTENQ_TEL, "<br>",
                                    "📧 <b>Email :</b> ", POSTENQ_MAIL, "<br>",
