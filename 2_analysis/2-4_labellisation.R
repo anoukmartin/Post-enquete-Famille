@@ -18,28 +18,17 @@ source("fonctions/match_vars.R")
 # -----------------------------------------------------------------------
 # Données du questionnaire (déjà présentes dans RStudio)
 
-EF <- readRDS(file = "1_data/processed/EF.rds")
-BI <- readRDS(file = "1_data/processed/BI.rds") 
+EF <- readRDS(file = "1_data/cleaned/EF.rds")
+BI <- readRDS(file = "1_data/cleaned/BI.rds") 
 liens <- readRDS(file = "1_data/processed/liens.rds")
 coordonnees <- readRDS(file = "1_data/processed/coordonnees.rds")
 
-
-# Uniformisation des noms de variables
-names(EF)
-
-
-# Unifromisation des identifiant invifiduels 
-BI <- BI  %>%
-  mutate(interrogationId = str_sub(identifiant, 1, 9),
-         identifiant = str_sub(identifiant, 10, -1))
 
 liens <- liens  %>%
   mutate(interrogationId = str_sub(identifiant, 1, 9),
          identifiant = str_sub(identifiant, 10, -1)) 
 
 # Anomalies importantes 
-
-
 
 # les deux alexandra
 BI[BI$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- paste0("ALEXANDRA 1973-05-09", c(" N°1", " N°2"))
@@ -55,57 +44,12 @@ liens[liens$identifiant == "ALEXANDRA 1973-05-09", "identifiant"] <- "ALEXANDRA 
 # 1. Charger les metadonnées des variables
 # -----------------------------------------------------------------------
 
-vars_BI <- readRDS(file = "1_data/processed/vars_EAR.rds")
-vars_EF <- readRDS(file = "1_data/processed/vars_EF.rds")
+vars_BI <- readRDS(file = "1_data/cleaned/vars_BI.rds")
+vars_EF <- readRDS(file = "1_data/cleaned/vars_EF.rds")
 
 # Vérification
 glimpse(vars_EF)
 glimpse(vars_BI)
-
-
-# 2. quelques améliorations à la main pour améliorer l'appariment 
-
-# Certaines variables de sexe sont codées à l'envers pour les femmes et les hommes dans l'EF, on doit corriger cela
-gender_var <- vars_EF %>%
-  filter(str_ends(Variable, "H|F")) %>%
-  filter(str_detect(Variable, "SEXE")) 
-# On va changer les valeurs pour ces variables puis on corrigera le dictionnaire 
-gender_var$Variable
-names(BI)[names(BI) %in% names(EF)]
-EF <- left_join(EF, BI[, c("identifiant", "sexe")], by = "identifiant")
-EF$SEXE_C
-EF <- EF %>%
-  mutate(SEXE_C = case_when(
-    sexe == "1" & SEXE_C == "1" ~  2, 
-    sexe == "1" & SEXE_C == "2" ~ 1, 
-    TRUE ~ SEXE_C)) %>%
-  mutate(SEXE_U1 = case_when(
-    sexe == "1" & SEXE_U1 == "1" ~  2, 
-    sexe == "1" & SEXE_U1 == "2" ~ 1, 
-    TRUE ~ SEXE_U1)) %>%
-  mutate(SEXE_U2 = case_when(
-    sexe == "1" & SEXE_U2 == "1" ~  2, 
-    sexe == "1" & SEXE_U2 == "2" ~ 1, 
-    TRUE ~ SEXE_U2))
-
-gender_var$Modalites
-
-vars_EF <- vars_EF %>%
-  mutate(Modalites = case_when(
-    Variable %in% gender_var$Variable ~ "1 - Un homme | 2 - Une femme", 
-    TRUE ~ Modalites
-  ))
-EF$sexe <- NULL
-rm(gender_var)
-EF$ADOPT_ENFLOG1
-
-
-
-
-
-#
-names(EF)[str_starts(names(EF), "RP")] <- str_remove(names(EF)[str_starts(names(EF), "RP")], "RP")
-
 
 
 
@@ -114,10 +58,60 @@ vars_BI$Source <- "EAR"
 vars_EF$Source <- "EF"
 
 vars_all <- bind_rows(vars_BI, vars_EF)
+glimpse(vars_all)
 
-vars_all <- vars_all %>%
-  mutate(Valeur = if_else(Modalites == "1 - Oui | 2 - Non", "Boléenne", Valeur)) %>%
-  mutate(Type = if_else(Modalites == "1 - Oui | 2 - Non", "Qualitative", Valeur)) 
+temp <- data.frame(Variable = namesBI_tech, 
+                   Question = NA, 
+                   Modalites = NA, 
+                   Valeur = NA,
+                   Type = NA, 
+                   Filtre = NA, 
+                   Qui = NA, 
+                   Theme = "Technique", 
+                   Source = "EAR")
+
+vars_all <- bind_rows(vars_all, temp)
+
+
+temp <- data.frame(Variable = namesEF_RP, 
+                   Question = NA, 
+                   Modalites = NA, 
+                   Valeur = NA,
+                   Type = NA, 
+                   Filtre = NA, 
+                   Qui = NA, 
+                   Theme = "from EAR", 
+                   Source = "EF")
+vars_all <- bind_rows(vars_all, temp)
+
+temp <- data.frame(Variable = namesEF_postenq , 
+                   Question = c("Post-enquête ?", "Souhaite etre contacté par mail ?", "Souhaite etre contacté par téléphone ?", "Mail", "Telephone"), 
+                   Modalites = c("1 - Oui | 2 - Non", rep("1 - Oui | 2 - Non", 2), rep(NA, 2)), 
+                   Type = c(rep("Qualitative", 3), rep("Texte libre", 2)),
+                   Valeur = c(rep("Boléenne", 3), rep("En clair", 2)),
+                   Filtre = NA, 
+                   Qui = NA, 
+                   Theme = "Post-enquete", 
+                   Source = "EF")
+
+vars_all <- bind_rows(vars_all, temp)
+
+temp <- data.frame(Variable = namesEF_tech, 
+                   Question = NA, 
+                   Modalites = NA, 
+                   Valeur = NA,
+                   Type = NA, 
+                   Filtre = NA, 
+                   Qui = NA, 
+                   Theme = "Technique", 
+                   Source = "EF")
+vars_all <- bind_rows(vars_all, temp)
+
+freq(vars_all$Modalites)
+# vars_all <- vars_all %>% 
+#   mutate(Valeur = if_else(Modalites == "1 - Oui | 2 - Non", "Boléenne", Valeur)) %>%
+#   mutate(Type = if_else(Modalites == "1 - Oui | 2 - Non", "Qualitative", Type)) 
+
 BIEF <- left_join(BI, EF, by = "identifiant")
 BIEF <- left_join(coordonnees, BIEF)
 
@@ -138,12 +132,12 @@ glimpse(correspondances)
 
 correspondances <- correspondances %>%
   group_by(Variable.x) %>%
-  slice_max(composite_score, n = 1, with_ties = FALSE) %>%
+  slice_max(lev_pond, n = 1, with_ties = FALSE) %>%
   ungroup()
   
 correspondances <- correspondances %>%
   mutate(Variable.y = case_when(
-    composite_score <= 0.02 ~ NA, 
+    lev_pond <= 0.77 ~ NA, 
     TRUE ~ Variable.y
   )) %>%
   select(Variable.x, Variable.y) %>%
@@ -157,12 +151,13 @@ vars_all2 <- left_join(correspondances, vars_all %>% filter(!is.na(Variable)), b
 orph <- vars_all2 %>%
   filter(is.na(Var)) %>%
   mutate(Source = case_when(
-    str_detect(Variable, "[lower]") ~ "EAR", 
+    str_detect(Variable, "[[:lower:]]") ~ "EAR", 
     TRUE ~ "EF"
   )) %>%
   mutate(Question = case_when(
     str_detect(Variable, regex('sexe|sex', ignore_case = T)) ~ "Sexe",
     str_detect(Variable, regex('age', ignore_case = T)) ~ "Age",
+    str_detect(Variable, regex('MINEUR', ignore_case = T)) ~ "Est mineur",
     str_detect(Variable, regex('anais|anai|annai', ignore_case = T)) ~ "Année de naissance",
     str_detect(Variable, regex('mnais|mnai', ignore_case = T)) ~ "Mois de naissance",
     str_detect(Variable, regex('jnais|jnai', ignore_case = T)) ~ "Jour de naissance",
@@ -253,7 +248,7 @@ vars_all2 <- vars_all2 %>%
     Qui == "ego" ~ "id"
   ))
 
-
+vars_all2
 
 
 vars_all2$Source[is.na(vars_all2$Source)]
@@ -323,7 +318,9 @@ build_labels <- function(modalites) {
 
 build_labels(modalites = c("1 – Masculin", "2 – Féminin"))
 
-
+data <- BIEF_lab
+dico <- vars_clean
+varname <- "NBENF"
 apply_dictionary <- function(data, dico, varname) {
   
   if (!varname %in% names(data)) return(data)
@@ -334,41 +331,36 @@ apply_dictionary <- function(data, dico, varname) {
   
   if (nrow(meta) == 0) return(data)
   
-  # 1. label de variable (toujours)
+  # 1. label de variable et attributs
   var_label(data[[varname]]) <- as.character(meta$Question)
   attr(data[[varname]], "Type") <- as.character(meta$Type)
   attr(data[[varname]], "Valeur") <- as.character(meta$Valeur)
-  print(paste0("# [", varname, "] ", var_label(data[[varname]]), " : ", 
-               attr(data[[varname]], "Type"), ", ", attr(data[[varname]], "Valeur")))
+  cat("# [", varname, "] ", var_label(data[[varname]]), " : ", 
+      attr(data[[varname]], "Type"), ", ", attr(data[[varname]], "Valeur"), "\n")
   
-  # 2. value labels uniquement si applicable
-  if (!is.na(meta$Type) & meta$Type == "Qualitative") {
+  # 2. value labels si qualitatives
+  if (!is.null(meta$Modalites[[1]])) {
     
     x <- data[[varname]]
     
-    # cas problématique : tout NA ou logique
-    if (all(is.na(x)) || is.logical(x)) {
-      return(data)
-    }
+    if (all(is.na(x)) || is.logical(x)) return(data)
     
-    # modalités présentes
+    if (!is.numeric(x)) data[[varname]] <- as.numeric(x)
+    
     mods <- meta$Modalites[[1]]
-    if (is.null(mods) || length(mods) == 0) {
-      return(data)
+    if (!is.null(mods) && length(mods) > 0) {
+      labels <- build_labels(mods)
+      if (length(labels) > 0) {
+        val_labels(data[[varname]]) <- labels
+        }
     }
     
-    labels <- build_labels(mods)
-    
-    if (length(labels) > 0) {
-      data[[varname]] <- labelled(
-        x,
-        labels = labels,
-        label = var_label(x)
-      )
-    }
     print(freq(data[[varname]]))
+    
   } else {
-  print(summary(data[varname]))}
+    print(summary(data[varname]))
+  }
+  
   return(data)
 }
 
@@ -377,146 +369,31 @@ apply_dictionary <- function(data, dico, varname) {
 vars_to_process <- intersect(vars_clean$Variable, names(BIEF))
 length(vars_to_process)
 
-BIEF_rec <- BIEF
+BIEF_lab <- BIEF
+BIEF_lab[BIEF_lab == "" & !is.na(BIEF_lab)] <- NA
 for (v in vars_to_process) {
-  BIEF_rec <- apply_dictionary(BIEF_rec, vars_clean, v)
+  BIEF_lab <- apply_dictionary(BIEF_lab, vars_clean, v)
 }
 
 
-## Recodage auto terminé : 
+dico_BIEF <- look_for(BIEF_lab)
+
+dir.create("1_data/labelled")
+saveRDS(BIEF_lab, "1_data/labelled/BIEF_lab.rds")
+
+## Recodage auto terminé, donc on peut aussi faire un export en recodages en claire
+
+BIEF_rec <- to_factor(BIEF_lab, levels = "p", sort_levels = "v")
+freq(BIEF_rec$dipl)
+
+res <- sapply(names(BIEF_rec), function(v) {
+  lab <- var_label(BIEF_rec[[v]])
+  if (is.null(lab) || is.na(lab)) {lab <- "" } else {
+    lab <- paste0(" ", lab)}
+  paste0("[", v, "]", lab)
+}, USE.NAMES = FALSE)
+names(BIEF_rec) <- res
+var_label(BIEF_rec) <- NULL
 
 
-
-# ------------------------------------------------------------------------------
-# 4. Codes géographiques -------------------------------------------------------
-# ------------------------------------------------------------------------------
-
-## On ajoute des labels pour les variables géo
-
-# URL du shapefile ZIP officiel
-url <- "https://data.iledefrance.fr/api/explore/v2.1/catalog/datasets/communes-et-arrondissements-municipaux-annee-en-cours/exports/shp?lang=fr&timezone=Europe%2FBerlin&use_labels=true"
-
-# Chemin temporaire pour télécharger le zip
-temp <- tempfile(fileext = ".zip")
-download.file(url, temp)
-
-# Décompresser le zip dans un dossier temporaire
-unzip_dir <- tempdir()
-unzip(temp, exdir = unzip_dir)
-
-# Trouver le fichier .shp dans le dossier décompressé
-shp_file <- list.files(unzip_dir, pattern = "\\.shp$", full.names = TRUE)
-
-# Lire le shapefile
-idf_sf <- st_read(shp_file[1])
-
-# Visualiser
-carte_idf <- ggplot(idf_sf) +
-  geom_sf(data = idf_sf, fill = "grey95", color = "grey60") +
-  coord_sf(expand = FALSE) +
-  theme_void() 
-carte_idf
-
-
-
-
-
-
-## Liens
-
-egos <- BIEF_rec %>%
-  mutate(age_x = 2025-anai, 
-         relation_ego = "EGO",
-         sexe_x = str_sub(sexe, 1, 1)) %>%
-  select(identifiant, sexe_x, age_x, relation_ego)
-
-liens <- liens%>%
-  mutate(
-    sexe_x = case_when(
-      sexe_x == "2" ~ "F", 
-      sexe_x == "1" ~ "M"
-    ), 
-    age_x = 2025-anai_x)
-
-menages <- bind_rows(egos, liens) %>% 
-  arrange(identifiant) %>%
-  mutate(libelle_ego = fct_recode(as.character(lien_r),
-                                  "Conjoint-e" = "1", 
-                                  "Enfant" = "2", 
-                                  "Beau fils ou belle fille (enfant du conjoint-e)" = "5", 
-                                  "Frère ou soeur (demi et quasi compris)" = "8", 
-                                  "Neveu ou nièce" = "11", 
-                                  "Belle-soeur ou beau-frère" = "14", 
-  )) %>%
-  mutate(relation_ego = case_when(
-    relation_ego == "EGO" ~ relation_ego, 
-    TRUE ~libelle_ego
-  )) %>%
-  select(identifiant, sexe_x, age_x, relation_ego)
-
-saveRDS(liens, file = "1_data/processed/liens.rds")
-saveRDS(menages, file = "1_data/processed/menages.rds")
-
-## Coordonnées
-
-saveRDS(coordonnees, file = "1_data/processed/coordonnees.rds")
-
-codecommunes <- read_csv("https://www.data.gouv.fr/api/1/datasets/r/7acc46ad-1c79-43d9-8f2d-d0a8ec78c068")
-codecommunes$Commune <- paste0(codecommunes$nomCommune, " (", codecommunes$codeDepartement, ")")
-codecommunes$codeCommune
-
-BIEF <- BIEF %>% 
-  mutate(across(contains("COM"), ~ str_remove(.x, "2024"))) %>%
-  mutate(across(contains("COM"),
-                ~ codecommunes$Commune[match(.x, codecommunes$codeCommune)]))
-
-
-# -----------------------------------------------------------------------
-# 3. Créer dynamiquement les instructions de recodage
-# -----------------------------------------------------------------------
-# Exemple de fonction qui génère du code R pour recoder chaque variable
-
-generate_recode <- function(var_name, modalities) {
-  if (length(modalities) == 0) return(NULL)
-  
-  # Extraire les codes et libellés
-  codes <- str_extract(modalities, "^[0-9]+")
-  labels <- str_remove(modalities, "^[0-9]+\\s*[-–]\\s*")
-  
-  # Construire la syntaxe recode()
-  recode_pairs <- paste0('"', codes, '" = "', labels, '"' ,collapse = ", ")
-  
-  glue::glue('## {var_name}
-            freq(BIEF${var_name})
-            BIEF <- BIEF %>% mutate({var_name} = recode(as.character({var_name}), {recode_pairs}))
-            freq(BIEF${var_name})
-            
-             ')
-}
-
-# -----------------------------------------------------------------------
-# 4. Générer tout le script de recodage automatiquement
-# -----------------------------------------------------------------------
-library(glue)
-
-recode_code <- map2_chr(vars_clean$Variable, vars_clean$Modalites, generate_recode)
-
-# Afficher les premières lignes du script généré
-cat(recode_code[1:20], sep = "\n\n\n")
-
-# -----------------------------------------------------------------------
-# 5. (Optionnel) Écrire le script dans un fichier .R
-# -----------------------------------------------------------------------
-writeLines(recode_code, "2_analysis/2-2_recode_BIEF_2025.R")
-
-# Tu pourras ensuite exécuter ce fichier dans RStudio :
-source("2_analysis/2-2_recode_BIEF_2025.R", verbose = T)
-# -----------------------------------------------------------------------
-
-# Après exécution, toutes les variables codées numériquement auront des libellés texte
-
-saveRDS(BIEF, file = "1_data/processed/BIEF.rds")
-saveRDS(BIEF_rec, file = "1_data/processed/BIEF_recodé.rds")
-saveRDS(vars_all2, file = "1_data/processed/vars_all.rds")
-saveRDS(liens, file = "1_data/processed/liens.rds")
-saveRDS(coordonnees, file = "1_data/processed/coordonnees.rds")
+saveRDS(BIEF_rec, "1_data/labelled/BIEF_rec.rds")

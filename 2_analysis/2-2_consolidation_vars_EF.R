@@ -5,17 +5,18 @@ EF <- readRDS("1_data/processed/EF.rds")
 
 # Uniformisation des noms de variables
 names(EF)
+
 EF <- EF %>%
-  select(ends_with("\\.y"))
+  select(-ends_with(".y"))
 names(EF) <- str_remove_all(names(EF), "_x|\\.x|\\.y|_merge")
 
 
 # On ajoute des variables qui manque ###########################################
 names(EF)[!(names(EF) %in% vars_EF$Variable)]
 namesEF_RP <- names(EF)[str_starts(names(EF), "RP")]
-namesEF_tech <- names(EF)[str_detect(names(EF), "[lower]") | str_detect(names(EF), "ID|id|CABFL|VAL|QUEST|REP|PRENOM_FIN")]
-
-namesEF <- names(EF)[!(names(EF) %in% c(namesEF_tech, namesEF_RP))]
+namesEF_tech <- names(EF)[str_detect(names(EF), "[[:lower:]]") | str_detect(names(EF), "NO_|ID_SOURCE|id|CABFL|VAL|QUEST|REP|PRENOM_FIN")]
+namesEF_postenq <- names(EF)[str_detect(names(EF), "POSTENQ")]
+namesEF <- names(EF)[!(names(EF) %in% c(namesEF_tech, namesEF_RP, namesEF_postenq))]
 
 namesEF
 
@@ -75,7 +76,7 @@ temp <- vars_EF[vars_EF$Variable == "AIDE_RECUE", ]
 temp$Question <- temp$Question %>%
   str_replace("\\(", "?") %>%
   str_sub(1, 204) 
-EF$AIDE_RE
+EF$AIDE_RECUE1
 temp <- temp[rep(1, 4), ]
 temp$Variable <- paste0(temp$Variable, 1:4)
 
@@ -116,7 +117,6 @@ vars_EF <- bind_rows(vars_EF, temp)
 names(EF)[!(names(EF) %in% vars_EF$Variable)]
 
 
-
 # Fréquence contact parents ####
 
 temp <- vars_EF %>%
@@ -151,6 +151,27 @@ temp$Question[2:3] <- c("Vivez-vous à moins d'une heure de chez votre parent ?"
                         "Votre parent a-t-il/elle d'autres enfants que vous qui vivent à moins d'une heure de chez lui/elle ?")
 vars_EF <- bind_rows(vars_EF, temp)
 
+# RAISON VIT CJT 
+EF$RAISON
+vars_EF <- vars_EF %>%
+  add_row(Variable = "RAISON_VIT_CJT", 
+          Question = "Pour quelle raison principale ne vivez-vous pas ensemble ?", 
+          Modalites = "1-Pour des raisons professionnelles | 2-Pour des raisons de santé (votre conjoint(e) vit en EHPAD, etc.) | 3-Pour une autre raison", 
+          Type = "Qualitative", 
+          Valeur = "Nominale") %>%
+  add_row(Variable = "PRECIS_VIE_CJT", 
+          Question = "Pouvez-vous préciser cette raison ?", 
+          Modalites = NA, 
+          Type = "Texte libre", 
+          Valeur = "En clair")
+
+
+# RAISON_VIE_CJT]
+# ➡ 2. "Pour quelle raison principale ne vivez-vous pas ensemble ? (*)"
+# [RAISON_VIE_CJT] - Car 1 - liste de modalités
+# 1 - "Pour des raisons professionnelles"
+# 2 - "Pour des raisons de santé (votre conjoint(e) vit en EHPAD, etc.)"
+# 3 - "Pour une autre raison"
 # variables manquantes pour les enfants (logement et ailleurs)
 vars_EF <- vars_EF %>%
   add_row(
@@ -335,6 +356,16 @@ EF$sexe <- NULL
 
 correspondances <-  trouver_correspondances(namesEF, 
                                             vars_EF$Variable)
-saveRDS(vars_EF, )
+
+
+vars_EF <- vars_EF %>%
+  mutate(Question = Question %>% 
+           str_remove("\\(\\*\\)") %>%
+           str_trim(), 
+         Modalites = Modalites %>% str_trim())
+  
+  
+saveRDS(vars_EF, "1_data/cleaned/vars_EF.rds")
+saveRDS(EF, "1_data/cleaned/EF.rds")
 
 

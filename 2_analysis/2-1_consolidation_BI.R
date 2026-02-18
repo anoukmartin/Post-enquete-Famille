@@ -1,5 +1,5 @@
 dir.create(path= "1_data/cleaned")
-
+source("fonctions/match_vars.R")
 # Idem pour BI 
 BI <- readRDS(file = "1_data/processed/BI.rds")
 names(BI)
@@ -19,8 +19,8 @@ BI <- BI  %>%
 tab <- BI[is.na(BI$sexe), ] # Brigitte et Sandra, on peut supposer que ce sont des femmes 
 
 ## Sandra et Brigitte
-BI[BI$identifiant == "BRIGITTE 1959-06-15", c("sexe", "PRENOM.x", "NOMNAISSANCE")] <-c("Féminin", "Brigitte", "HANSER")
-BI[BI$identifiant == "SANDRA 1972-03-26", c("sexe", "PRENOM.x", "NOMNAISSANCE")] <-c("Féminin", "Sandra", "CREBOIS")
+BI[BI$identifiant == "BRIGITTE 1959-06-15", c("sexe", "PRENOM.x", "NOMNAISSANCE")] <-c("2", "Brigitte", "HANSER")
+BI[BI$identifiant == "SANDRA 1972-03-26", c("sexe", "PRENOM.x", "NOMNAISSANCE")] <-c("2", "Sandra", "CREBOIS")
 
 #### Idem pour tempBI ###
 
@@ -57,6 +57,7 @@ vars_BI <- vars_BI %>%
 
 correspondances <-  trouver_correspondances(namesBI, 
                                             vars_BI$Variable)
+
 
 
 saveRDS(vars_BI, "1_data/cleaned/vars_BI.rds")
