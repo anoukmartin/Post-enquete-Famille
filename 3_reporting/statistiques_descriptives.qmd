@@ -47,10 +47,11 @@ theme_set(
 ```
 
 ```{r}
-coordonnees <- readRDS(here("1_data/processed/donnees_contact.rds")) %>%
+coordonnees <- readRDS(here("1_data/enriched/BIEF_rec.rds")) %>%
   mutate(
     across(c(dipl, empl, tp, situat, stat, COUPLE), ~ str_wrap(.x, width = 40))
   )
+
 ```
 
 ```{r}
@@ -192,7 +193,7 @@ coordonnees %>%
 
 ```{r, include = F}
 # URL du shapefile ZIP officiel
-url <- "https://data.iledefrance.fr/api/explore/v2.1/catalog/datasets/communes-france/exports/shp?lang=fr&timezone=Europe%2FBerlin&use_labels=true"
+url <- "https://opendata.iledefrance.fr/api/explore/v2.1/catalog/datasets/communes-et-arrondissements-municipaux-annee-en-cours/exports/shp?lang=fr&timezone=Europe%2FBerlin&use_labels=true"
 
 # Chemin temporaire pour télécharger le zip
 temp <- tempfile(fileext = ".zip")
@@ -214,13 +215,11 @@ carte_idf <- ggplot(idf_sf) +
   coord_sf(expand = FALSE) +
   theme_void() 
 
-coordonnees <- coordonnees %>%
-  mutate(codecommune = if_else(str_starts(result_citycode, "751"), "75056", result_citycode))
-  
-idf_sf$codecommune <- idf_sf$Code_Offici.8 %>%
-  str_remove_all("\\['") %>% str_remove_all("'\\]")
 
-coordonnees$result_citycode[!coordonnees$codecommune %in% idf_sf$codecommune]
+
+idf_sf$codecommune <- idf_sf$Code_commun.1 
+
+coordonnees$Code_commune[!coordonnees$Code_commune %in% idf_sf$codecommune]
 communes_counts <- coordonnees %>%
   #mutate(Commune = if_else(str_starts(Commune, "PARIS"), "PARIS", Commune)) %>%
   group_by(codecommune, sexe) %>%  # ou code_postal si tu utilises les codes postaux
@@ -232,10 +231,6 @@ idf_sf_counts <- idf_sf %>%
   left_join(communes_counts, by = "codecommune") %>%
   filter(!is.na(nb_individus))
 
-coordonnees <- coordonnees %>%
-  left_join(idf_sf %>%
-              select(codecommune, Libelle_CAT.1, Statut_Comm.1), 
-            by = "codecommune") 
 
 centres <- st_centroid(idf_sf_counts)
 coords <- st_coordinates(centres)
@@ -259,7 +254,7 @@ ggplot() +
   geom_sf(data = centres, aes(size = nb_individus, color = sexe ), alpha = 0.4) +
   geom_text_repel(
     data = centres,
-    aes(x = X, y = Y, label = paste0(str_to_title(Nom_Officie.8), " [", nb_individus, "]")),
+    aes(x = X, y = Y, label = paste0(str_to_title(Commune__Ar), " [", nb_individus, "]")),
     size = 2.5,
     max.overlaps = Inf,
     min.segment.length = 1
@@ -411,6 +406,13 @@ plot_categorique(coordonnees, "empl", titre = "Type de contrat")
 ```{r}
 plot_categorique(coordonnees, "tp", titre = "Temps de travail")
 ```
+## Origine géographique
+```{r}
+
+plot_categorique(coordonnees, "iln", titre = "Lieu de naissance")
+
+```
+## Acendance migratoire
 
 ## Aire urbaine
 
@@ -421,7 +423,7 @@ plot_categorique(coordonnees, "tp", titre = "Temps de travail")
 
 plot_categorique(
   data = coordonnees,
-  fill_var = "Libelle_CAT.1",
+  fill_var = "Aire_urbaine",
   facet_var = "souspop",
   titre = "Aire urbaine d'habitation"
 )
@@ -435,7 +437,7 @@ plot_categorique(
 
 plot_categorique(
   data = coordonnees,
-  fill_var = "Statut_Comm.1",
+  fill_var = "Ruralite",
   facet_var = "souspop",
   titre = "Ruralité"
 )
