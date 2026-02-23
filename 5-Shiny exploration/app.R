@@ -18,7 +18,35 @@ library(shinyjs)
 
 
 
-coordonnees <- readRDS(here("1_data/processed/donnees_contact.rds")) %>%
+coordonnees <- readRDS(here("1_data/enriched/BIEF_rec.rds")) %>%
+  mutate(
+    
+    # ---- Corps du message ----
+    mail_body = paste0(
+      ",\n\n",
+      civilite, " ", PRENOM, " ", NOMFAMILLE, ",\n\n\n\n",
+      "Suite au courrier que je vous ai adressé concernant l’entretien complémentaire à l’enquête Familles 2025, je me permets de revenir vers vous afin de convenir d’un rendez‑vous. L’entretien, d’une durée d’environ 1h30, pourra se dérouler à votre domicile, à la date et à l’heure qui vous conviendront le mieux (y compris en fin de journée, en soirée, le samedi, le dimanche ou les jours fériés, si cela est plus pratique). Si cela n’est pas possible à votre domicile, merci de me le préciser afin que nous envisagions un autre lieu. \n\n", 
+      "Si cela vous convient, pourriez‑vous m’indiquer vos disponibilités pour les prochaines semaines ?\n\n", 
+      "Je reste joignable par retour de mail ou par téléphone (06 71 79 32 18). Vous trouverez également, en pièce jointe, la lettre d’information sur l’enquête par entretien ainsi que la notice précisant les garanties de confidentialité qui vous ont été adressées par voie postale. \n\n", 
+      "Je vous remercie par avance de votre réponse et reste à votre disposition pour toute précision.\n\n", 
+      "Cordialement,\n\n \n\n\n\n",
+      "Anouk MARTIN\n\n",
+      "Doctorante au CRESPPA LabTop-CSU (UMR 7217)\n\n",
+      "Chargée de cours à l’université Paris 8 Vincennes Saint-Denis\n\n\n\n",
+      "59-61 rue Pouchet, 75849 Paris Cedex 17\n\n",
+      "anouk.martin35@univ-paris8.fr / 06 71 79 32 18\n\n"
+    ),
+    
+    mail_subject = paste0(
+      "Proposition de rendez-vous pour l’entretien complémentaire à l’enquête Familles 2025"
+    ),
+    
+    mailto_link = paste0(
+      "mailto:", POSTENQ_MAIL,
+      "?subject=", URLencode(mail_subject),
+      "&body=", URLencode(mail_body)
+    )
+  ) %>%
   mutate(
     fiche_html_path = paste0("3_reporting/individus/html_complets/", identifiant, "_fiche_infos.html"),
     popup = paste0(
@@ -49,7 +77,7 @@ coordonnees <- readRDS(here("1_data/processed/donnees_contact.rds")) %>%
 
 
 
-favoris_path <- here("1_data/processed/favoris.rds")
+favoris_path <- here("1_data/app/favoris.rds")
 
 if (file.exists(favoris_path)) {
   favoris_init <- readRDS(favoris_path)
@@ -59,7 +87,7 @@ if (file.exists(favoris_path)) {
 }
 
 
-tags_path <- here("1_data/processed/tags.rds")
+tags_path <- here("1_data/app/tags.rds")
 
 if (file.exists(tags_path)) {
   tags_init <- readRDS(tags_path)
@@ -68,15 +96,15 @@ if (file.exists(tags_path)) {
   saveRDS(tags_init, tags_path)
 }
 
-tags <- reactiveVal(tags_init)
+tags_rv <- reactiveVal(tags_init)
 
-questionnaires <- readRDS(here("1_data/processed/BIEF.rds")) %>%
-  mutate(
-    fiche = sprintf(
-      '<button class="btn btn-sm btn-primary" onclick="Shiny.setInputValue(\'go_fiche\', \'%s\', {priority: \'event\'})">Voir fiche</button>',
-      identifiant
-    )
-  )
+# questionnaires <- readRDS(here("1_data/processed/BIEF.rds")) %>%
+#   mutate(
+#     fiche = sprintf(
+#       '<button class="btn btn-sm btn-primary" onclick="Shiny.setInputValue(\'go_fiche\', \'%s\', {priority: \'event\'})">Voir fiche</button>',
+#       identifiant
+#     )
+#   )
 
 
 
@@ -192,10 +220,10 @@ pal <- colorFactor(c("lightblue", "pink", "lightgreen"), domain = c("Couple pare
 server <- function(input, output, session) {
   
   # Index
-  outvars <- names(coordonnees)[names(coordonnees) %in% names(questionnaires)]
-  outvars <- outvars[-1]
+  # outvars <- names(coordonnees)[names(coordonnees) %in% names(questionnaires)]
+  # outvars <- outvars[-1]
   
-  index <-  left_join(coordonnees %>% select(-any_of(outvars)), questionnaires, by = "identifiant") %>%
+  index <-  coordonnees %>%
     mutate(across(everything(), as.character)) %>%
     pivot_longer(-identifiant, names_to = "Variable", values_to = "valeur") %>%
     left_join(vars_all2 %>% select(Variable, Question), by = "Variable") %>%
@@ -267,7 +295,7 @@ server <- function(input, output, session) {
       ids <- ids[
         purrr::map_lgl(
           ids,
-          ~ all(input$filter_tags %in% (tags()[[.x]] %||% character(0)))
+          ~ all(input$filter_tags %in% (tags_rv()[[.x]] %||% character(0)))
         )
       ]
     }
@@ -289,10 +317,10 @@ server <- function(input, output, session) {
     coordonnees %>% filter(identifiant %in% ids_filtrés())
   })
   
-  questionnaires_filtrés <- reactive({
-    questionnaires %>% filter(identifiant %in% ids_filtrés())
-  })
-  
+  # questionnaires_filtrés <- reactive({
+  #   coordonnees %>% filter(identifiant %in% ids_filtrés())
+  # } )
+  # 
   # ----------------- Onglet 1 : stats des ---------------------
   ## Quelques fonction utiles 
 
@@ -609,8 +637,8 @@ server <- function(input, output, session) {
   })
   
   # ----------------- Onglet 3 : Recherche fiches individuelles -----------------
-  all_tags <- reactive({
-    unique(unlist(tags()))
+  all_tags_rv <- reactive({
+    unique(unlist(tags_rv()))
   })
   # Filtrer les fiches selon la recherche plein texte
   fiche_filtered <- reactive({
@@ -657,7 +685,7 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       "filter_tags",
-      choices = all_tags(),
+      choices = all_tags_rv(),
       server = TRUE
     )
   })
@@ -668,7 +696,12 @@ server <- function(input, output, session) {
     
     fiche_html <- fiche_data$fiche_html[fiche_data$identifiant == id]
     est_favori <- id %in% favoris()
-    tags_id <- tags()[[id]]
+    tags_id <- tags_rv()[[id]]
+    
+    personne <- coordonnees %>% filter(identifiant == id)
+    mailto_link <- personne$mailto_link
+    
+   
     
     tagList(
       actionButton(
@@ -690,6 +723,8 @@ server <- function(input, output, session) {
       ),
       actionButton("add_tag", "Ajouter"),
       
+     
+      
       if (!is.null(tags_id) && length(tags_id) > 0) {
         div(
           strong("Tags :"),
@@ -702,7 +737,13 @@ server <- function(input, output, session) {
           })
         )
       },
-      
+      htmltools::tags$a(
+        href = mailto_link,
+        class = "btn btn-success",
+        target = "_blank",
+        "✉ Contacter par mail"
+      ),
+      br(), br(),
       hr(),
       htmltools::tags$div(HTML(fiche_html))
     )
@@ -710,16 +751,16 @@ server <- function(input, output, session) {
   
   
   add_tag <- function(id, tag) {
-    t <- tags()
+    t <- tags_rv()
     t[[id]] <- unique(c(t[[id]], tag))
-    tags(t)
+    tags_rv(t)
     saveRDS(t, tags_path)
   }
   
   remove_tag <- function(id, tag) {
-    t <- tags()
+    t <- tags_rv()
     t[[id]] <- setdiff(t[[id]], tag)
-    tags(t)
+    tags_rv(t)
     saveRDS(t, tags_path)
   }
   observeEvent(input$add_tag, {
@@ -734,14 +775,14 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       "new_tag",
-      choices = all_tags(),
+      choices = all_tags_rv(),
       server = TRUE
     )
   })
   observe({
     req(selected_id())
     id <- selected_id()
-    tags_id <- tags()[[id]]
+    tags_id <- tags_rv()[[id]]
     
     if (!is.null(tags_id)) {
       lapply(tags_id, function(tg) {
@@ -777,7 +818,7 @@ server <- function(input, output, session) {
   
   # ----------------- Onglet 4 : Explorateur base de données -----------------
   output$table_db <- renderDT({
-    questionnaires_filtrés()
+    coordonnees_filtrées()
   }, options = list(pageLength = 10, scrollX = TRUE, searchHighlight = TRUE, escape = FALSE), filter = 'top')
   
 }
