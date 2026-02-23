@@ -67,8 +67,7 @@ similarite_lev_pond <- function(a, b) {
 library(stringdist)
 library(dplyr)
 library(tidyr)
-liste1 <- namesEF
-liste2 <- vars_EF$Variable
+
 trouver_correspondances <- function(liste1, liste2, seuil_similarite = 0.7) {
   
   pairs <- expand_grid(
