@@ -318,9 +318,7 @@ build_labels <- function(modalites) {
 
 build_labels(modalites = c("1 – Masculin", "2 – Féminin"))
 
-data <- BIEF_lab
-dico <- vars_clean
-varname <- "NBENF"
+
 apply_dictionary <- function(data, dico, varname) {
   
   if (!varname %in% names(data)) return(data)
@@ -376,7 +374,7 @@ for (v in vars_to_process) {
 }
 
 
-dico_BIEF <- look_for(BIEF_lab)
+
 
 dir.create("1_data/labelled")
 saveRDS(BIEF_lab, "1_data/labelled/BIEF_lab.rds")
@@ -386,14 +384,16 @@ saveRDS(BIEF_lab, "1_data/labelled/BIEF_lab.rds")
 BIEF_rec <- to_factor(BIEF_lab, levels = "p", sort_levels = "v")
 freq(BIEF_rec$dipl)
 
-res <- sapply(names(BIEF_rec), function(v) {
-  lab <- var_label(BIEF_rec[[v]])
-  if (is.null(lab) || is.na(lab)) {lab <- "" } else {
-    lab <- paste0(" ", lab)}
-  paste0("[", v, "]", lab)
-}, USE.NAMES = FALSE)
-names(BIEF_rec) <- res
-var_label(BIEF_rec) <- NULL
+# res <- sapply(names(BIEF_rec), function(v) {
+#   lab <- var_label(BIEF_rec[[v]])
+#   if (is.null(lab) || is.na(lab)) {lab <- "" } else {
+#     lab <- paste0(" ", lab)}
+#   paste0("[", v, "]", lab)
+# }, USE.NAMES = FALSE)
+# names(BIEF_rec) <- res
+# var_label(BIEF_rec) <- NULL
 
 
 saveRDS(BIEF_rec, "1_data/labelled/BIEF_rec.rds")
+
+saveRDS(vars_all2, "1_data/cleaned/vars_BIEF.rds")

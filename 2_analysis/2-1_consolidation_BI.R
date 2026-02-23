@@ -19,8 +19,8 @@ BI <- BI  %>%
 tab <- BI[is.na(BI$sexe), ] # Brigitte et Sandra, on peut supposer que ce sont des femmes 
 
 ## Sandra et Brigitte
-BI[BI$identifiant == "BRIGITTE 1959-06-15", c("sexe", "PRENOM.x", "NOMNAISSANCE")] <-c("2", "Brigitte", "HANSER")
-BI[BI$identifiant == "SANDRA 1972-03-26", c("sexe", "PRENOM.x", "NOMNAISSANCE")] <-c("2", "Sandra", "CREBOIS")
+BI[BI$identifiant == "BRIGITTE 1959-06-15", c("sexe", "PRENOM", "NOMNAISSANCE")] <-c("2", "Brigitte", "HANSER")
+BI[BI$identifiant == "SANDRA 1972-03-26", c("sexe", "PRENOM", "NOMNAISSANCE")] <-c("2", "Sandra", "CREBOIS")
 
 #### Idem pour tempBI ###
 

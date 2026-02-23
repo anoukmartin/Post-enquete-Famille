@@ -22,13 +22,16 @@ labs_communes <- codecommunes %>%
 
 # 2️⃣ appliquer aux colonnes COM
 BIEF_lab <- BIEF_lab %>%
-  mutate(across(contains("COM"), ~ {
+  mutate(across(contains("COM_"), ~ {
     
     x <- str_remove(.x, "2024")
-    x <- as.character(x)
+    x <- as.numeric(x)
     
-    # labels correspondant aux codes présents
     labs_to_apply <- labs_communes[names(labs_communes) %in% unique(x)]
+    
+    # inversion nom ↔ valeur
+    labs_to_apply <- setNames(as.numeric(names(labs_to_apply)),
+                              labs_to_apply)
     
     val_labels(x) <- labs_to_apply
     
@@ -36,6 +39,8 @@ BIEF_lab <- BIEF_lab %>%
   }))
 
 freq(BIEF_lab$PARENT_COM_ENFLOG1)
+freq(BIEF_lab$PARENT_COM_ENFLOG2)
+freq(BIEF_lab$COM_ENFAIL1)
 # meme chose version déparyement 
 
 # 1️⃣ créer un vecteur code → labels concaténés
@@ -48,10 +53,13 @@ labs_departements <- codecommunes %>%
 BIEF_lab <- BIEF_lab %>%
   mutate(across(matches("dp|dlt|dep|DEP"), ~ {
     
-    x <- as.character(.x)
+    x <- as.numeric(.x)
     
-    # labels correspondant aux codes présents
     labs_to_apply <- labs_departements[names(labs_departements) %in% unique(x)]
+    
+    # inversion nom ↔ valeur
+    labs_to_apply <- setNames(as.numeric(names(labs_to_apply)),
+                              labs_to_apply)
     
     val_labels(x) <- labs_to_apply
     
@@ -62,7 +70,6 @@ BIEF_lab <- BIEF_lab %>%
 freq(BIEF_lab$dpnai)
 #############################################################################
 ### Consolidation des adresses postales : #####################################
-
 
 # Construction de l’adresse complète pour le géocodage
 BIEF_lab <- BIEF_lab %>%
@@ -114,7 +121,8 @@ coordonnees_geo[coordonnees_geo$AdresseConsolidee == "WARN" , ]
 coordonnees_geo <- coordonnees_geo %>%
   mutate(
     ComplementAdresse = str_trim(ComplementAdresse) %>% str_to_title(),
-    ComplementAdresse = if_else(ComplementAdresse == "", "", str_glue(", {ComplementAdresse}"))) 
+    ComplementAdresse = if_else(is.na(ComplementAdresse), "", str_glue(", {ComplementAdresse}"))) 
+coordonnees_geo$ComplementAdresse
 coordonnees_geo <- coordonnees_geo %>%
   mutate(
     AdresseConsolidee = str_replace(
@@ -122,6 +130,7 @@ coordonnees_geo <- coordonnees_geo %>%
       "(\\b\\d{5}\\b)",
       str_glue("{ComplementAdresse} \\1")
     )) 
+coordonnees_geo$AdresseConsolidee
 coordonnees_geo <- coordonnees_geo %>%
   mutate(
     AdresseSimple = str_sub(
@@ -156,9 +165,10 @@ shp_file <- list.files(unzip_dir, pattern = "\\.shp$", full.names = TRUE)
 
 
 # Lire le shapefile
-idf_sf <- st_read(shp_file[2]) # ou 1 je sais pas pourquoi 
+idf_sf <- st_read(shp_file[1]) # ou 1 je sais pas pourquoi 
 
 
+glimpse(idf_sf)
 
 coordonnees_geo <- left_join(coordonnees_geo, idf_sf, by = c("result_citycode" = "Code_commun.1"))
 
@@ -181,7 +191,7 @@ coordonnees_geo <- coordonnees_geo %>%
 BIEF_lab <- left_join(BIEF_lab, coordonnees_geo, by = "identifiant")
 
 BIEF_newvars <- names(coordonnees_geo)[-1]
-
+BIEF_newvars
 ############################################################
 ### 5. Pays 
 #############################################################
@@ -191,15 +201,17 @@ isopays <- read_csv("https://sql.sh/ressources/sql-pays/sql-pays.csv", col_names
 isopays <- isopays[, -c(1,2, 6)]
 names(isopays) <- c("iso2", "iso3", "pays")
 #PNAI PAY
-iso3_labels <- setNames(isopays$pays, isopays$iso3)
+iso3_labels <- setNames(isopays$iso3, isopays$pays)
 
 BIEF_lab <- BIEF_lab %>%
   mutate(across(matches("PNAI|PAY"), ~ {
-    # convertir en character pour éviter les erreurs
+    
     x_char <- as.character(.x)
-    # garder uniquement les codes présents dans iso3_labels
-    labels_x <- iso3_labels[names(iso3_labels) %in% x_char]
-    labelled(x_char, labels = labels_x)
+    
+    # garder seulement les codes présents
+    labels_x <- iso3_labels[iso3_labels %in% x_char]
+    
+    haven::labelled(x_char, labels = labels_x)
   }))
 # Afficher le résultat
 freq(BIEF_lab$PNAI_PAR1)
@@ -475,14 +487,14 @@ saveRDS(BIEF_lab, "1_data/enriched/BIEF_lab.rds")
 BIEF_rec <- to_factor(BIEF_lab, levels = "p", sort_levels = "v")
 freq(BIEF_rec$dipl)
 
-res <- sapply(names(BIEF_rec), function(v) {
-  lab <- var_label(BIEF_rec[[v]])
-  if (is.null(lab) || is.na(lab)) {lab <- "" } else {
-    lab <- paste0(" ", lab)}
-  paste0("[", v, "]", lab)
-}, USE.NAMES = FALSE)
-names(BIEF_rec) <- res
-var_label(BIEF_rec) <- NULL
+# res <- sapply(names(BIEF_rec), function(v) {
+#   lab <- var_label(BIEF_rec[[v]])
+#   if (is.null(lab) || is.na(lab)) {lab <- "" } else {
+#     lab <- paste0(" ", lab)}
+#   paste0("[", v, "]", lab)
+# }, USE.NAMES = FALSE)
+# names(BIEF_rec) <- res
+# var_label(BIEF_rec) <- NULL
 
 
 saveRDS(BIEF_rec, "1_data/enriched/BIEF_rec.rds")
