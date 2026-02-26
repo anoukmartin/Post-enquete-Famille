@@ -1,4 +1,6 @@
 # Erichissement des tables de données 
+library(labelled)
+library(questionr)
 
 BIEF_lab <- readRDS("1_data/labelled/BIEF_lab.rds")
 
@@ -21,6 +23,7 @@ labs_communes <- codecommunes %>%
   { setNames(.$Commune_label, .$codeCommune) }
 
 # 2️⃣ appliquer aux colonnes COM
+names(BIEF_lab)[grepl("COM_", names(BIEF_lab))]
 BIEF_lab <- BIEF_lab %>%
   mutate(across(contains("COM_"), ~ {
     
@@ -49,9 +52,15 @@ labs_departements <- codecommunes %>%
   summarise(Departement_label = paste(unique(Departement), collapse = " / "), .groups = "drop") %>%
   { setNames(.$Departement_label, .$codeDepartement) }
 
-# 2️⃣ appliquer aux colonnes COM
+# 2️⃣ appliquer aux colonnes dep
+cols_selectionnees <- names(BIEF_lab)[
+  grepl("dp|dlt|dep|DEP|dnai|dran", names(BIEF_lab)) & 
+    !grepl("AG_DEP", names(BIEF_lab))
+]
+
+cols_selectionnees
 BIEF_lab <- BIEF_lab %>%
-  mutate(across(matches("dp|dlt|dep|DEP"), ~ {
+  mutate(across(all_of(cols_selectionnees), ~ {
     
     x <- as.numeric(.x)
     
@@ -68,6 +77,9 @@ BIEF_lab <- BIEF_lab %>%
 
 # vérifier
 freq(BIEF_lab$dpnai)
+freq(BIEF_lab$AG_DEP_PARENT)
+freq(BIEF_lab$dpnai)
+
 #############################################################################
 ### Consolidation des adresses postales : #####################################
 
@@ -216,6 +228,10 @@ BIEF_lab <- BIEF_lab %>%
 # Afficher le résultat
 freq(BIEF_lab$PNAI_PAR1)
 freq(BIEF_lab$PNAI_C)
+
+
+
+
 
 
 ### JSP######################
@@ -421,7 +437,27 @@ BIEF_lab <- left_join(BIEF_lab, infos, by = "identifiant")
 ####
 
 
-BIEF_lab <- BIEF_lab %>%
+
+
+
+saveRDS(BIEF_lab, "1_data/enriched/BIEF_lab.rds")
+
+
+
+BIEF_rec <- to_factor(BIEF_lab, levels = "p", sort_levels = "v")
+freq(BIEF_rec$dipl)
+
+# res <- sapply(names(BIEF_rec), function(v) {
+#   lab <- var_label(BIEF_rec[[v]])
+#   if (is.null(lab) || is.na(lab)) {lab <- "" } else {
+#     lab <- paste0(" ", lab)}
+#   paste0("[", v, "]", lab)
+# }, USE.NAMES = FALSE)
+# names(BIEF_rec) <- res
+# var_label(BIEF_rec) <- NULL
+
+
+BIEF_rec <- BIEF_rec %>%
   mutate(coordonnes_html = paste0( "<p>",
                                    "📞 <b>Téléphone :</b> ", POSTENQ_TEL, "<br>",
                                    "📧 <b>Email :</b> ", POSTENQ_MAIL, "<br>",
@@ -471,35 +507,9 @@ BIEF_lab <- BIEF_lab %>%
 
 
 
-
-
-
-
-
-
-
-
-
-saveRDS(BIEF_lab, "1_data/enriched/BIEF_lab.rds")
-
-
-
-BIEF_rec <- to_factor(BIEF_lab, levels = "p", sort_levels = "v")
-freq(BIEF_rec$dipl)
-
-# res <- sapply(names(BIEF_rec), function(v) {
-#   lab <- var_label(BIEF_rec[[v]])
-#   if (is.null(lab) || is.na(lab)) {lab <- "" } else {
-#     lab <- paste0(" ", lab)}
-#   paste0("[", v, "]", lab)
-# }, USE.NAMES = FALSE)
-# names(BIEF_rec) <- res
-# var_label(BIEF_rec) <- NULL
-
-
 saveRDS(BIEF_rec, "1_data/enriched/BIEF_rec.rds")
 
-
+BIEF_rec$resume_sociodemo_html
 
 
 

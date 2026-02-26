@@ -1,16 +1,16 @@
 ---
 title: ""
 format:
-  # pdf:
-  #   documentclass: article
-  #   geometry:
   #     - left=1cm
   #     - right=1cm
   #     - top=1cm
   #     - bottom=1cm
   #     - heightrounded
-  #   header-includes:
   #     - \usepackage[absolute,overlay]{textpos}
+  # pdf:
+  #   documentclass: article
+  #   geometry:
+  #   header-includes:
   html: default
 editor: visual
 params:
@@ -44,20 +44,20 @@ library(here)
 initiale <- str_sub(params$id_individu, 1, 1)
 id_individu <- params$id_individu
 # Recharger BIEF
-BIEF <- readRDS(here("1_data", "processed", "BIEF.rds")) %>%
+BIEF <- readRDS(here("1_data", "enriched", "BIEF_rec.rds")) %>%
     filter(identifiant == id_individu) 
 
 
 # Recharger vars_all
-vars_all <- readRDS(here("1_data", "processed", "vars_all.rds")) 
+vars_all <- readRDS(here("1_data", "cleaned", "vars_BIEF.rds")) 
 
 #Recharger liens 
-liens <- readRDS(here("1_data", "processed", "menages.rds")) %>%
-  filter(identifiant == id_individu)
+# liens <- readRDS(here("1_data", "processed", "menages.rds")) %>%
+#   filter(identifiant == id_individu)
 
-#recharger coordonées 
-coordonnees <- readRDS(here("1_data", "processed", "donnees_contact.rds")) %>%
-    filter(identifiant == id_individu) 
+# #recharger coordonées 
+# coordonnees <- readRDS(here("1_data", "processed", "donnees_contact.rds")) %>%
+#     filter(identifiant == id_individu) 
 
 cat("# Rapport pour ", id_individu)
 
@@ -74,7 +74,7 @@ library(ggplot2)
 library(maps)
 
 logement_sf <- st_as_sf(
-  coordonnees,
+  BIEF,
   coords = c("longitude", "latitude"),
   crs = 4326
 )
@@ -136,51 +136,16 @@ if(!dir.exists("figures")) dir.create("figures")
 png_file <- "figures/carte_idf.png"
 ggsave(png_file, plot = carte_idf, width = 3, height = 3, units = "in", dpi = 150)
 
-texte_coordonnees <- paste0(
-  str_to_sentence(coordonnees$civilite), " ", coordonnees$PRENOM.x, " ", coordonnees$NOMFAMILLE, "\n\n",
-  "- \\textbf{Téléphone} : ", str_trim(coordonnees$POSTENQ_TEL), "\n\n",
-  "- \\textbf{Email} : ", str_trim(coordonnees$POSTENQ_MAIL), "\n\n",
-  "- \\textbf{Adresse} : ", coordonnees$AdresseConsolidee, "\n\n",
-  "- \\textbf{Département} : ", coordonnees$result_context
-
-)
-
 
 cat("
 ::: {.callout-important}
 ### Informations de contact
 
-", coordonnees$coordonnes_html, "
+", BIEF$coordonnes_html, "
 
 
 :::
 ")
-```
-
-```{r}
-#| echo: false
-#| include: false
-#| results: 'asis'
-
-cat("
-::: {.callout-important}
-### Informations de contact
-
-", str_to_sentence(coordonnees$civilite), coordonnees$PRENOM.x,  coordonnees$NOMFAMILLE, "
-
-- **Téléphone** : ", str_trim(coordonnees$POSTENQ_TEL), "
-- **Email** : ", str_trim(coordonnees$POSTENQ_MAIL), "
-- **Adresse** : ", coordonnees$AdresseConsolidee, "
-
-")
-
-carte_idf
-
-cat("
-:::
-")
-
-
 ```
 
 ```{r}
@@ -192,49 +157,10 @@ cat("
 ### Résumé de situation socio-démographique 
 
 ", 
-  coordonnees$resume_sociodemo_html, 
+  BIEF$resume_sociodemo_html, 
 "
 :::")
 
-# cat("
-# ::: {.callout-note}
-# ### Résumé de situation socio-démographique
-# 
-# #### Individu : 
-# - Prénom : ", coordonnees$PRENOM.x, "
-# - Nom : ", coordonnees$NOMFAMILLE, "
-# - Age : ", 2026 - coordonnees$anai, "
-# - Sexe : ", coordonnees$sexe, "
-# - En emploi : ", coordonnees$situat, "
-# - Niveau de diplôme : ", coordonnees$dipl, "
-# - Statut d'emploi : ", coordonnees$empl,  "
-# - Temps de travail : ", coordonnees$tp, "
-# - Profession : ", str_to_sentence(coordonnees$profession) ,"
-# - Entreprise : ", coordonnees$rs, "
-# 
-# #### Situation conjugale
-# - En couple : ", coordonnees$COUPLE, "
-# - Statut matrimonial : ", coordonnees$matr, "
-# 
-# #### (Dernier) conjoint 
-# - Prénom : ", coordonnees$PRENOM_C, "
-# - Age : ", 2026 - coordonnees$ANAI_C, "
-# - Sexe : ", coordonnees$SEXE_C, "
-# - Emploi du conjoint : ", coordonnees$STATUT_C, "
-# 
-# #### Enfants 
-# - Enfants dans le logement : ", coordonnees$enfants_logement, "
-# - Enfants résidants ailleurs : ", coordonnees$enfants_ailleurs, "
-# - Enfants du conjoint : ", coordonnees$ENFAV_C, "
-# - Enfants décédés : ", coordonnees$nb_enfantsDCD, "
-# 
-# #### Classement 
-# - Sous-population d'apparenance : ", coordonnees$souspop,"
-# - Situation familiale : ", coordonnees$description_personalisee, "
-# 
-# :::
-# 
-# ")
 
 
 
@@ -244,12 +170,18 @@ cat("
 
 ```{r, eval = params$full_report}
 
-res <- data.frame(
-  Variable = names(BIEF),
-  Reponse = as.character(BIEF)
-) 
 
-res <- full_join(vars_all, res, by = "Variable")
+res <-  BIEF %>%
+    mutate(across(everything(), as.character)) %>%
+    pivot_longer(-identifiant, names_to = "Variable", values_to = "valeur") %>%
+    left_join(vars_all, by = "Variable") %>%
+    mutate(valeur = if_else(valeur == "", NA, valeur)) %>%
+    mutate(Question = if_else((is.na(Question) | Question == ""), Variable, Question))%>%
+    mutate(Source = if_else(is.na(Source), "Variables construites", Source))%>%
+  mutate(Qui = if_else(is.na(Qui), "ego", Qui))%>%
+  mutate(Theme = if_else(is.na(Theme), "build", Theme))%>%
+  select(-identifiant)
+ 
 
 # Recodage éventuel
 res <- res %>%
@@ -260,8 +192,8 @@ res <- res %>%
 
 if(!params$missing_values){
   res <- res %>%
-    filter(!is.na(Reponse)) %>%
-    filter(!(Reponse %in% c("NA", "", " ")))
+    filter(!is.na(valeur)) %>%
+    filter(!(valeur %in% c("NA", "", " ")))
 }
 
 
@@ -282,7 +214,7 @@ prepare_pack <- function(x,col){
 res <- res %>%
   mutate(Variable_txt = paste0(Variable_txt, " " , Question)) 
 
-for (source in unique(res$Source)){
+for (source in c("EAR", "EF", "Variables construites")){
   cat("# Réponses à ", source, "\n\n")
   res1 <- res %>% 
     filter(Source == source)
@@ -291,10 +223,13 @@ for (source in unique(res$Source)){
     res2 <- res1 %>% 
       filter(Qui == qui)
     
-    indexNA <- which(is.na(res2$Reponse) | res2$Reponse %in% c("NA", "", " "))
+    indexNA <- which(is.na(res2$valeur) | res2$valeur %in% c("NA", "", " "))
     col_temp <- prepare_pack(res2, "Theme")
+    if(length(col_temp) == 0 || any(is.na(names(col_temp)))) {
+        col_temp <- NULL  # pack_rows acceptera NULL sans erreur
+    }
     cat(res2 %>%
-      select(Variable_txt, Reponse) %>%
+      select(Variable_txt, valeur) %>%
       kable(
      # format = "latex",
       booktabs = TRUE,          # style « booktabs » (plus joli)

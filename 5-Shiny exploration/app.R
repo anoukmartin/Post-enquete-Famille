@@ -17,7 +17,7 @@ library(shinyjs)
 # Chargement des données
 
 
-
+vars_all <- readRDS(here("1_data/cleaned/vars_BIEF.rds"))
 coordonnees <- readRDS(here("1_data/enriched/BIEF_rec.rds")) %>%
   mutate(
     
@@ -168,11 +168,12 @@ ui <- dashboardPage(
         tabName = "stats",
         
         fluidRow(
-          valueBoxOutput("nb_individus", width = 4),
+          valueBoxOutput("nb_individus", width = 2),
           valueBoxOutput("age_moyen", width = 2), 
           valueBoxOutput("sex_ratio", width = 2), 
           valueBoxOutput("nenfants", width = 2), 
-          valueBoxOutput("dipl_ratio", width = 2)
+          valueBoxOutput("dipl_ratio", width = 2),
+          valueBoxOutput("etran_immigr", width = 2)
         ),
         plotOutput("plot_sexe"),
         plotOutput("plot_age"),
@@ -217,6 +218,7 @@ ui <- dashboardPage(
 
 pal <- colorFactor(c("lightblue", "pink", "lightgreen"), domain = c("Couple parental", "Monoparentale", "Recomposée"))
 # -------------------------
+
 server <- function(input, output, session) {
   
   # Index
@@ -226,7 +228,7 @@ server <- function(input, output, session) {
   index <-  coordonnees %>%
     mutate(across(everything(), as.character)) %>%
     pivot_longer(-identifiant, names_to = "Variable", values_to = "valeur") %>%
-    left_join(vars_all2 %>% select(Variable, Question), by = "Variable") %>%
+    left_join(vars_all %>% select(Variable, Question), by = "Variable") %>%
     mutate(valeur = if_else(valeur == "", NA, valeur)) %>%
     mutate(Question = if_else((is.na(Question) | Question == ""), Variable, Question))
   
@@ -334,7 +336,7 @@ server <- function(input, output, session) {
     
     p <- data %>%
       ggplot(aes(x = sexe, fill = !!fill_sym)) +
-      geom_bar(position = "fill") +
+      geom_bar(position = "fill", color = "black") +
       geom_text(
         aes(label = after_stat(count)),
         stat = "count",
@@ -405,9 +407,10 @@ server <- function(input, output, session) {
       color = "olive"
     )
   })
+  
   output$sex_ratio <- renderValueBox({
     valueBox(
-      value = paste0(round(100*nrow(coordonnees_filtrées() %>% filter(sexe == "Féminin")) / nrow(coordonnees_filtrées()), 1), "%"),
+      value = paste0(round(100*nrow(coordonnees_filtrées() %>% filter(sexe == "[2] Féminin")) / nrow(coordonnees_filtrées()), 1), "%"),
       subtitle = "Sexe-ratio",
       icon = icon("person-dress"), 
       color = "olive"
@@ -421,13 +424,25 @@ server <- function(input, output, session) {
       color = "olive"
     )
   })
+  
   output$dipl_ratio <- renderValueBox({
     valueBox(
       value = paste0(round(100*nrow(coordonnees_filtrées() %>% 
-                                      filter(dipl %in% c("Aucun diplôme",
-                                                         "BEPC, brevet élémentaire, brevet des collèges, DNB",
-                                                         "CAP, BEP ou diplôme de niveau équivalent"))) / nrow(coordonnees_filtrées()), 1), "%"),
+                                      filter(dipl %in% c("[1] Aucun diplôme",
+                                                         "[2] CEP (certificat d’études primaires)",
+                                                         "[3] BEPC, brevet élémentaire, brevet des collèges, DNB",
+                                                         "[4] CAP, BEP ou diplôme de niveau équivalent"))) / nrow(coordonnees_filtrées()), 1), "%"),
       subtitle = "Faibles diplômes (>Bac)",
+      icon = icon("graduation-cap"), 
+      color = "olive"
+    )
+  })
+  
+  output$etran_immigr <- renderValueBox({
+    valueBox(
+      value = paste0(round(100*nrow(coordonnees_filtrées() %>% 
+                                      filter(!is.na(pnai))) / nrow(coordonnees_filtrées()), 1), "%"),
+      subtitle = "Né-e-s à l'étranger",
       icon = icon("graduation-cap"), 
       color = "olive"
     )

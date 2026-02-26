@@ -211,8 +211,8 @@ vars_all2 <- vars_all2 %>%
     str_detect(Variable, "PAR2") ~ 
       glue("Parent n°2"),
     
-    str_ends(Variable, "_C|_C[0-9]|_U|CJT|CONJ|CJ|MARI|PACS") ~ 
-      glue("Conjoint-e actuel/Dernier-e conjoint-e"),
+    str_ends(Variable, "_C|_C[0-9]|_U|CJT|CONJ|CJ|MARI|PACS|SEPAR|ANNEE_S") ~ 
+      glue("Conjoint-e actuel/Dernier-e conjoint-e"), 
     
     str_ends(Variable, "_U1") ~ 
       glue("Premier-e conjoint-e"),
